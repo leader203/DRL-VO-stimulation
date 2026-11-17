@@ -1,0 +1,99 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# [-5.17928,-2.61383,0.0]
+
+# 路径相对此文件；位置 [m]、速度 [m/s]、时间 [s]、角度 [deg]。
+schema_version: 1
+navigation:
+  backend: ros2
+  waypoint_frame: stage_world
+  settings_path: ../runtime/ros2_navigation.yaml
+scene:
+  asset_path: ../../assets/THIRD_EXP_1.usd
+  layers:
+    # 本机贴图重定向层：把原资产中的 /project/Third_Floor/... 指向抽取的 Sence 目录。
+    - textures_local.usda
+    - door_activation.usda
+robots:
+  - layer_path: evt_ros_robot.usda
+    prim_path: /World/EVT_3
+    position: [-2.3, -2.0, 0.02]
+    yaw_degrees: 0.0
+
+simulation:
+  # 仿真时间 [s]；实际播放耗时由实时率决定，初始化另计。
+  duration: 60.0
+  seed: 42
+  report_path: output/status.json
+
+pedestrians:
+  # 必须与 actors 条目数一致。
+  count: 4
+  assets: ../runtime/characters.yaml
+  defaults:
+    behavior: walk
+    speed: 0.9
+    # 原始路点的三维到达/目标投影容差 [m]；不改变身体半径或避碰净距。
+    arrival_tolerance: 0.2
+    gender: male
+    repeat: true
+    wait: 0.5
+  actors:
+    walker_01:
+      position: [-5.91079, -2.30403, 0.0] # 初始世界坐标，m
+      yaw: 3.0 # 出生旋转，deg
+      start_time: 1.0 # 仿真第 1 秒开始行走
+      waypoints:
+        - position: [2.39829, -0.6456, 0.0]
+          wait: 8.0 # 到达并完成转向后停留 8 秒
+          yaw: 180.0 # 到达后的世界朝向
+
+        - position: [-2.95032, 1.20887, 0.0]
+          wait: 4.0
+          yaw: 180.0
+
+    walker_02:
+      position: [-0.24079, -0.61706, 0.0] # 初始世界坐标，m
+      yaw: 0.0 # 出生旋转，deg
+      start_time: 3.0 # 仿真第 3 秒开始行走
+      waypoints:
+        - position: [-2.90847, 0.24044, 0.0]
+          wait: 4.0 # 到达并完成转向后停留 4 秒
+          yaw: 180.0 # 到达后的世界朝向
+        - position: [-5.25953, -1.03968, 0.0]
+          wait: 2.0 # 到达并完成转向后停留 2 秒
+          yaw: 180.0 # 到达后的世界朝向
+
+    walker_03:
+      position: [3.634, -0.50313, 0.0] # 初始世界坐标，m
+      yaw: 6.0 # 出生旋转，deg
+      start_time: 5.0 # 仿真第 5 秒开始行走
+      waypoints:
+        # - position: [3.46515, 1.31306, 0.0]
+        #   wait: 0.0 # 到达并完成转向后继续下一段
+        #   yaw: 180.0 # 到达后的世界朝向
+        - position: [-2.20991, 1.34166, 0.0]
+          wait: 0.0 # 到达并完成转向后继续下一段
+          yaw: 180.0 # 到达后的世界朝向
+
+        - position: [-6.25, -1.45, 0.0]
+          wait: 8.0 # 到达并完成转向后停留 8 秒
+          yaw: 180.0 # 到达后的世界朝向
+
+    walker_04:
+      position: [-5.17928, -2.61383, 0.0] # 初始世界坐标，m
+      yaw: 0.0 # 出生旋转，deg
+      start_time: 5.0 # 仿真第 5 秒开始行走
+      waypoints:
+        - position: [3.53016, 1.4301, 0.0]
+          wait: 12.0 # 到达并完成转向后停留 12 秒
+          yaw: 90.0 # 到达后的世界朝向
+        # - position: [-2.86948, 0.17174, 0.0]
+        #   wait: 1.0 # 到达并完成转向后停留 1 秒
+        #   yaw: 90.0 # 到达后的世界朝向
+
+# 各角色继承 defaults 的 walk/repeat；人数变化时同时维护 count 和 actors。
+# 字段说明：../../docs/pedestrian_yaml.md；工作流：../../docs/workflow.md。

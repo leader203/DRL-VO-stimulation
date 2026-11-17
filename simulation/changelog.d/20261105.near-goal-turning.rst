@@ -1,0 +1,34 @@
+Limited ordinary and local-point tracking speed by the tangent circle's curvature
+before RVO2 heading projection, preventing near-goal pursuit from accumulating
+repeated turns. Preserved the original SFM attraction, certified retreat rays,
+waypoints, arrival tolerance, specified headings, waits and collision guards.
+Added public-step regressions across target distances, initial headings, control
+rates, turn limits, speeds and a nearby standing pedestrian.
+
+Handled ordinary goal resource cycles by retaining a safely queued newcomer until
+the owner's original turn and dwell ended, then permitting a bounded owner yield
+only after certifying both original onward routes. Fixed the waiting deadline on
+first entry and retained explicit failure for unsafe, unbounded or infeasible cases.
+
+Added ``auto_return_heading`` for generated reverse legs. Shared ROS settings and
+new projects copied from them used ``follow_route``, while omitted external settings
+retained ``preserve`` compatibility. Explicit forward/closed-route headings,
+positions and waits were preserved. Set ``auto_return_heading: preserve`` to retain
+the previous copied return headings. Matched offline and native arrival audits to
+the selected policy.
+
+Kept a committed stationary turn until completion, accounting for its remaining
+angular budget and retaining dynamic-obstacle escape when waiting was unsafe.
+
+Retained near-point recovery after low executed progress until its guidance
+changed, avoiding repeated switches back to lateral SFM momentum. Protected an
+active passing path from conflicting third-party entry only when the third
+pedestrian could safely wait without blocking the certified path. Released the
+queue after actual passage and retained original transaction deadlines.
+
+Queried nearer feasible RVO2 directions before parking turns. Accepted replacement
+motion only inside the current execution sector after joint swept-path checks,
+retaining the original wall field, speed limits and angular limits.
+
+Handled goal owners that had already finished their original dwell and entered
+departure using the same fixed-budget, fully certified goal-exchange flow.

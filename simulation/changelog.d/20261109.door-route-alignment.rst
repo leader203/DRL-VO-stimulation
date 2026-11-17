@@ -1,0 +1,19 @@
+Verified door activation against the finite aperture and measured midpoint
+heading. Settled safe compartment closures before advancing an admitted
+zero-dwell indoor goal.
+
+Removed one-tick rounding delays for grid-aligned ROS start and dwell times.
+Reported observed dwell visits and checked the original timing and heading in
+coordinate alignment receipts.
+
+Preferred short certified paths with extra wall clearance and retained the
+preference during lookahead. Fell back to ordinary hard clearance in narrow
+or dynamically obstructed spaces.
+
+Skipped A* expansion for disconnected raster anchors before testing full
+passing and waiting refuges. Preserved candidate order and swept-body
+certification.
+
+Rechecked the measured refuge pose before a bounded retreat expired. A
+stationary yielder could hold short of its nominal point when a fresh full
+passing path was certified. Failed rechecks kept the original deadline.

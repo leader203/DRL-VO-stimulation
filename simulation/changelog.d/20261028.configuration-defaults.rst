@@ -1,0 +1,8 @@
+Enabled native obstacle and automatic avoidance in the shared pedestrian defaults
+and newly generated native projects. Profiles without settings_path also inherited
+the enabled native switches; callers needing the former behavior could explicitly
+set either switch to false.
+
+Added a project-relative output/status.json report to generated scenarios and
+synchronized maintained Kit profiles with the launcher's disabled crash-upload
+policy.

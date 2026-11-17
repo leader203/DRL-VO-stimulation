@@ -1,0 +1,2 @@
+Consolidated package ROS 2 resource paths and removed redundant project
+generation logic. Moved historical evidence links to the documentation index.

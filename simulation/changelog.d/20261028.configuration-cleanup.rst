@@ -1,0 +1,6 @@
+Simplified pedestrian parameter files to explicit native switches, project-specific
+spawn bounds and non-default wander timeouts. Omitted values continued to use
+configuration type defaults; custom values could be added explicitly.
+
+Documented retained legacy entry points and independently loaded Kit profiles,
+and simplified generated parameter copies without adding configuration inheritance.

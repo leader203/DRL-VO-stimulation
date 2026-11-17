@@ -1,0 +1,2 @@
+Reported setup and playback wall times, simulation advance and real-time factor,
+and added rate-limited progress updates. Kept duration in simulation seconds.

@@ -1,0 +1,3 @@
+Reused a bounded set of certified static goal regions across repeated A* plans.
+Preserved route selection and reevaluated projected endpoints when live geometry
+could affect the original arrival region.

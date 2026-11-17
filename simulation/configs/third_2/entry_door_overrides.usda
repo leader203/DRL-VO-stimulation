@@ -1,0 +1,56 @@
+#usda 1.0
+(
+    customLayerData = {
+        string purpose = "Entry leaf is visual-only; fixed frame and scene geometry are preserved."
+        string sourceScene = "/project/EXP/IsaacLab/src/navigation_data_synthesis/assets/THIRD_2.usd"
+        string sourceSha256 = "d135a8642297528be1fb8d43c6b3bd7c0981afca0f8e158cff64188adfc81854"
+    }
+)
+
+over "World"
+{
+    over "Meshes"
+    {
+        over "Assets"
+        {
+            over "Door_0000"
+            {
+                over "Geom"
+                {
+                    over "A06865e7a93064541911395c3271e1c34" (
+                        prepend apiSchemas = ["NavMeshExcludeAPI"]
+                    )
+                    {
+                        over "Visual" (
+                            prepend apiSchemas = ["NavMeshExcludeAPI"]
+                        )
+                        {
+                        }
+
+                        over "HandleContact0" (
+                            prepend apiSchemas = ["NavMeshExcludeAPI"]
+                        )
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "HandleContact1" (
+                            prepend apiSchemas = ["NavMeshExcludeAPI"]
+                        )
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "CollisionMesh" (
+                            prepend apiSchemas = ["NavMeshExcludeAPI"]
+                        )
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

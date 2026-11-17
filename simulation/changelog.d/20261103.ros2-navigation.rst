@@ -1,0 +1,23 @@
+Added an isolated ROS 2 pedestrian backend with PhysX occupancy mapping, raster
+path planning, SFM velocity preferences, and the supplied RVO2 collision solver.
+Kept YAML route points, arrival tolerances, headings, waits, speeds and start times.
+Converted stage units/up-axis and ROS map frames explicitly, and drove walking
+animation from actual travel distance with one root-pose owner.
+
+Added observed-joint door coordination with bounded internal refuge objectives;
+kept original door colliders and source USD files intact. Added strict failures
+for unsupported geometry, missing observations, unreachable goals and timeouts,
+and independent CPU, DDS and native acceptance tooling.
+Separated pedestrian and obstacle prediction horizons to avoid low-speed wall
+approach tails. Updated the local C ABI to version 3; precompiled version 2
+libraries require rebuilding.
+Added bounded, certified passing transactions for opposing pedestrians in narrow
+passages. Smoothed wall-force selection to remove discontinuities when nearby
+boundary segments exchanged order.
+
+Made CLI project creation select ``navigation.backend: ros2`` by default.
+Existing Python creation APIs and configurations without ``navigation`` retained
+IRA compatibility. To migrate an existing project, explicitly select ``ros2``
+and provide ROS settings; source the configured ROS setup script before launch.
+ROS navigation did not use IRA, behavior/navigation extensions or NavMesh. Legacy
+IRA recording and RL control remained outside the new ROS execution contract.

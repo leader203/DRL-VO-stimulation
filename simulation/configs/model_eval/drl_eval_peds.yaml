@@ -1,0 +1,38 @@
+# Frozen DRL-VO model-only evaluation WITH the third_3 four-pedestrian crowd.
+# The guard is evaluated and logged but never applied; alignment is disabled.
+schema_version: 1
+package_root: /home/stardust/Desktop/DRLVO_NewMetro_4ped_480k_model_and_scripts/DRLVO_NewMetro_4ped_480k
+checkpoint: frozen_policy.pt
+expected_sha256: bef18b93c76f5eef245942b0aa1bede03faaf14efcc7a0fbc38e972a989996ca
+device: cpu
+goal_xy_m: [3.53016, 1.4301]
+goal_tolerance_m: 0.3
+goal_settle_s: 0.5
+goal_timeout_s: 120.0
+replan_period_s: 0.5
+path_deviation_m: 0.3
+lookahead_m: 0.5
+robot_rigid_body_path: /World/EVT_3/base_link
+robot_footprint_radius_m: 0.37
+robot_clearance_radius_m: 0.51
+robot_length_m: 0.742
+robot_width_m: 0.447
+escape_angular_rad_s: 0.8
+escape_reverse_m_s: 0.2
+scan_source: occupancy_grid
+scan_min_range_m: 0.1
+scan_max_range_m: 8.0
+min_scan_stop_m: 0.25
+min_scan_release_m: 0.35
+max_linear_m_s: 0.5
+max_angular_rad_s: 2.0
+min_pedestrian_clearance_m: 0.25
+pedestrian_release_m: 0.45
+pedestrian_horizon_s: 0.8
+forward_guard_distance_m: 0.25
+max_invalid_observations: 3
+guard_mode: "off"
+alignment_enabled: false
+dry_run: false
+save_observations: false
+log_every_n: 1

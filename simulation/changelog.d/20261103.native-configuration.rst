@@ -1,0 +1,11 @@
+Exposed the selected Kit file's declared asset root in dependency previews without
+querying the SDK or overriding runtime asset paths. Clarified that low-level file
+proxies did not inherit run/Kit settings and recommended the complete loader.
+Added an optional headless third_3 wrapper that reused the original scenario,
+routes, timing and update frequency while disabling the main viewport.
+Retained the default motion-library token as an unverified SDK resource when a
+custom Kit file omitted its asset root, while keeping missing local files fatal.
+
+Retained native wander dimension bindings until successful stage closure and made
+registration cleanup retryable after unsubscribe failures, preserving later
+external routine replacements.

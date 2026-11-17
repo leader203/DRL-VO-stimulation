@@ -1,0 +1,15 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Reuse the original scene, actors, routes, timing and selected navigation backend.
+scenario = "simulation.yaml"
+
+[simulation]
+headless = true
+render_viewport = false
+report_path = "output/headless_status.json"
+
+[recording]
+enabled = false

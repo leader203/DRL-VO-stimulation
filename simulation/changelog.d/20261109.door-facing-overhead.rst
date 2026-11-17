@@ -1,0 +1,18 @@
+Required measured portal-facing heading for ROS 2 automatic-door admission and
+the first safe opening command. Preserved the continuous sweep and measured
+door-state interlocks.
+
+Allowed a certified final approach inside the original arrival ball when the
+first arrival pose could not clear the door sweep within the yield budget.
+Retained the authored heading, dwell and return-to-route checks.
+
+Used the existing certified yield transaction for persistent close-range route
+merges where both pedestrians slowed to a stop. Preserved ordinary avoidance
+through transient crossing and following movements.
+
+Added opt-in bounded fixed-spawn correction, an optional A* goal projection
+limit, and a shared maximum yield distance. Recorded intentional spawn offsets
+separately from coordinate-transform residuals.
+
+Added auto-framed top-down ROS 2 recording and selected it in the ``third_3``
+recording profile. Kept oblique recording as the default for other projects.

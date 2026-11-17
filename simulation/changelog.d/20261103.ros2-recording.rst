@@ -1,0 +1,6 @@
+Added ROS 2 video recording through the existing recording configuration, with a
+dedicated camera, simulation-clock sampling and encoded-video verification.
+Kept original scenario routes, timings, control frequency and IRA recording APIs.
+
+Added complete recording preflight summaries, explicit map-coordinate metadata,
+and independent report/application finalization when an output write failed.

@@ -1,0 +1,15 @@
+Synchronized the ``third_3`` population count with its four authored actors.
+Removed duplicate coordinate notes and updated the configuration guides to
+distinguish ROS 2 and IRA placement, recording and timing contracts. Marked the
+previous spawn rejection and three-person recording as historical evidence.
+
+Added ROS 2 fixed-spawn diagnostics without starting Kit, using the declared
+input frame and local USD metadata when available. Rejected malformed ROS
+namespaces and USD prim paths, numeric overflow, cyclic configuration links,
+and conflicting report and recording destinations before launch. Kept ROS robot
+destinations independent of the unused IRA actor root and restored the viewport
+for explicit GUI workflows.
+
+Separated the ``third_3`` IRA and ROS 2 status destinations. Made the no-viewport
+profile explicitly disable recording and the recording profile explicitly start
+playing, so inherited settings do not conflict with the selected startup mode.

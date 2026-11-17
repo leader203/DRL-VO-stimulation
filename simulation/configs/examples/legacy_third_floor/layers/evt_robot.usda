@@ -1,0 +1,90 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 The Isaac Lab Project Developers
+# SPDX-License-Identifier: BSD-3-Clause
+
+(
+    subLayers = [@robot_collision_proxies.usda@]
+)
+
+class "EVTRobotContactMargins" (
+    prepend apiSchemas = ["PhysxCollisionAPI"]
+)
+{
+    # Third_Floor uses meters; preserve wheel/roller floor contacts.
+    float physxCollision:contactOffset = 0.04
+    float physxCollision:restOffset = 0.02
+}
+
+over "World"
+{
+    over "CharacterBodyColliderSettings"
+    {
+        custom rel robot_yield_body = </World/EVT_EXP/base_link>
+        custom double robot_yield_clearance = 0.04
+        custom double robot_yield_stop_distance = 0.35
+        custom double robot_yield_slow_distance = 1.0
+        custom double robot_yield_min_walk_speed = 0.5
+        custom bool separate_robot_visuals = true
+    }
+
+    def Xform "EVT_EXP" (
+        prepend references = @../../../../../assets/EVT-EXP.usd@</EVT_3>
+    )
+    {
+        # Park in the new north-side free area, clear of the patrol turn.
+        double3 xformOp:translate = (-1.50, 1.80, 0)
+        quatd xformOp:orient = (0.7071067811865476, 0, 0, -0.7071067811865476)
+        double3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        over "base_link"
+        {
+            # Match native steering to the enlarged capsules and contact offsets.
+            # Navigation reads this mesh; contact stays on the detailed convex hulls.
+            def Mesh "RuntimeNavigationProxy" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+            )
+            {
+                float3[] extent = [(-0.3941, -0.3337, 0), (0.5676, 0.3335, 1.75)]
+                point3f[] points = [(-0.3941, -0.3337, 0), (-0.3941, -0.3337, 1.75), (-0.3941, 0.3335, 0), (-0.3941, 0.3335, 1.75), (0.5676, -0.3337, 0), (0.5676, -0.3337, 1.75), (0.5676, 0.3335, 0), (0.5676, 0.3335, 1.75)]
+                int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+                int[] faceVertexIndices = [0, 2, 3, 0, 3, 1, 4, 5, 7, 4, 7, 6, 0, 1, 5, 0, 5, 4, 2, 6, 7, 2, 7, 3, 0, 4, 6, 0, 6, 2, 1, 3, 7, 1, 7, 5]
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = false
+                uniform token subdivisionScheme = "none"
+                token visibility = "invisible"
+            }
+            over "base_link_visual_103b6c94" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "gripper_link1" (prepend inherits = </EVTRobotContactMargins>) {}
+        over "gripper_link2" (prepend inherits = </EVTRobotContactMargins>) {}
+        over "tool_link"
+        {
+            over "tool_base_link_4ebeaa2b" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "link6"
+        {
+            over "XMS5_R800_W4G3B4C_link6_0b86751c" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "tn__XMS5R800W4G3B4C_link5_XV09"
+        {
+            over "XMS5_R800_W4G3B4C_link5_3930bf50" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "tn__XMS5R800W4G3B4C_link4_XV09"
+        {
+            over "XMS5_R800_W4G3B4C_link4_06b140e8" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "tn__XMS5R800W4G3B4C_link3_XV09"
+        {
+            over "XMS5_R800_W4G3B4C_link3_0f856b6d" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "tn__XMS5R800W4G3B4C_link2_XV09"
+        {
+            over "XMS5_R800_W4G3B4C_link2_2a31a60c" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+        over "tn__XMS5R800W4G3B4C_link1_XV09"
+        {
+            over "XMS5_R800_W4G3B4C_link1_2e1e2718" (prepend inherits = </EVTRobotContactMargins>) {}
+        }
+    }
+}

@@ -1,0 +1,32 @@
+Extended guidance through nearby raster corners onto certified visible portions
+of the next planned edge. Avoided chasing the last millimeters of an intermediate
+vertex before turning back onto the route. Preserved original business waypoints,
+arrival checks, angular and speed limits, and full swept-body collision guards.
+Added closed-loop regression coverage in four rotated occupancy maps.
+
+Used fixed door-yield rays only after certifying static and peer clearance and
+all observed external obstacle translations through the original remaining
+deadline. Retained ordinary reciprocal escape for unknown motion or conflicting
+sweeps, without changing refuge targets, displacement budgets or timeouts.
+
+Aligned soft wall drive with certified route guidance and retained a positive,
+representable route-aligned RVO guide instead of replacing it with a tangent.
+Removed unrequested heading restoration after closing refuges at yaw-null goals;
+explicit goal headings and the full remaining dwell were preserved.
+
+Added bounded certificate waits for routes temporarily blocked by moving third
+pedestrians. Started a real passing transaction only after its complete certificate
+was restored, preserving sealed-pair failures, body clearance and retreat limits.
+
+Shared certified corner lookahead across ordinary, goal and passing paths, including
+the passing predictor. Included current planning obstacles in that prediction and
+consumed completed vertices, avoiding missed encounters caused by divergent guides.
+Discarded float-velocity residuals only at a scale relative to the requested speed
+and after stationary safety checks, propagating resulting stops through joint guards.
+Restricted ordinary forward recovery to weakened soft preferences instead of
+overriding already valid reciprocal constraints and their velocity relaxation.
+
+Preserved passing warmup through consecutive zero-dwell goals and delayed
+optional distant passing until a visible conflict persisted for one velocity
+relaxation period. Kept ordinary ORCA in control during brief slowdowns and
+retained independent near-range certification.

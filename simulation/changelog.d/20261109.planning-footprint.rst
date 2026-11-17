@@ -1,0 +1,3 @@
+Reduced the shared ROS obstacle margin from 0.03 m to 0.0275 m. The effective
+planning, placement and obstacle-sweep radius became 0.2775 m. The physical
+capsule radius and pedestrian separation settings retained their values.

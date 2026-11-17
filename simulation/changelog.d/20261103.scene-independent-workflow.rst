@@ -1,0 +1,15 @@
+Added an automated ROS workflow for fresh execution/recording outputs, explicit
+coordinate-alignment tables and diagrams, trajectory evaluation and final reports.
+Kept scenario-specific geometry, routes and door metadata in user input files.
+
+Added ``navigation.waypoint_frame: stage_world`` for composed Isaac scene-world
+coordinates, including centimeter and Y-up stages. Existing unlabelled inputs
+retained ``world_m`` compatibility; new ROS CLI projects selected ``stage_world``.
+Speeds, arrival tolerances, map settings and recording cameras remained SI.
+Decoupled the double-precision control clock from source USD FPS and time codes;
+kept authored animation timing and restored the owned loop/player state on close.
+
+Corrected premature door requests to use each door's authored approach distance
+and actual portal crossing. Kept access authorization until measured passage
+completed, and reduced unnecessary pedestrian side bias and false passing recovery
+for already-separated or diverging routes without reducing safety clearance.

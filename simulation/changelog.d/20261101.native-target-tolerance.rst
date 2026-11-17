@@ -1,0 +1,6 @@
+Retried rejected native movement targets once at a connected, radius-aware
+NavMesh projection within the configured arrival tolerance, while retaining
+the original waypoint for actual three-dimensional arrival checks. Reported
+projection and native acceptance limits when a target remained unavailable.
+Avoided reporting an already surfaced schedule failure again during scene
+cleanup while retaining new scheduling and SDK cleanup failures.

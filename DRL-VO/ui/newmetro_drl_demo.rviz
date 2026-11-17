@@ -1,0 +1,175 @@
+Panels:
+- Class: rviz_common/Displays
+  Name: Displays
+- Class: rviz_common/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Displays:
+  - Alpha: 0.35
+    Cell Size: 1
+    Class: rviz_default_plugins/Grid
+    Color: 100; 100; 100
+    Enabled: true
+    Line Style:
+      Line Width: 0.03
+      Value: Lines
+    Name: Metric grid
+    Plane: XY
+    Plane Cell Count: 40
+    Reference Frame: <Fixed Frame>
+    Value: true
+  - Alpha: 0.65
+    Class: rviz_default_plugins/Map
+    Color Scheme: map
+    Draw Behind: true
+    Enabled: true
+    Name: Static native reference map (not SLAM)
+    Topic:
+      Depth: 1
+      Durability Policy: Transient Local
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/reference_map
+    Use Timestamp: false
+    Value: true
+  - Alpha: 1
+    Class: rviz_default_plugins/PointCloud2
+    Color: 0; 255; 0
+    Color Transformer: FlatColor
+    Decay Time: 0
+    Enabled: true
+    Name: Live scan 01 (green)
+    Position Transformer: XYZ
+    Selectable: true
+    Size (Pixels): 4
+    Size (m): 0.035
+    Style: Points
+    Topic:
+      Depth: 2
+      Durability Policy: Volatile
+      Filter size: 10
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/scan_01/points_world
+    Use Fixed Frame: true
+    Value: true
+  - Alpha: 1
+    Class: rviz_default_plugins/PointCloud2
+    Color: 0; 200; 255
+    Color Transformer: FlatColor
+    Decay Time: 0
+    Enabled: true
+    Name: Live scan 02 (cyan)
+    Position Transformer: XYZ
+    Selectable: true
+    Size (Pixels): 4
+    Size (m): 0.035
+    Style: Points
+    Topic:
+      Depth: 2
+      Durability Policy: Volatile
+      Filter size: 10
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/scan_02/points_world
+    Use Fixed Frame: true
+    Value: true
+  - Class: rviz_default_plugins/Marker
+    Enabled: true
+    Name: Physical robot pose
+    Namespaces:
+      physical_robot: true
+    Topic:
+      Depth: 2
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/robot
+    Value: true
+  - Class: rviz_default_plugins/MarkerArray
+    Enabled: true
+    Name: Physical pedestrians
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/pedestrians
+    Value: true
+  - Class: rviz_default_plugins/Marker
+    Enabled: true
+    Name: Selected goal
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/goal
+    Value: true
+    Namespaces: {}
+  - Class: rviz_default_plugins/Marker
+    Enabled: true
+    Name: Policy subgoal 0.5m (magenta)
+    Namespaces: {}
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/subgoal
+    Value: true
+  - Class: rviz_default_plugins/Path
+    Enabled: true
+    Name: Planned global route
+    Topic:
+      Depth: 5
+      Durability Policy: Transient Local
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/planned_route
+    Value: true
+    Color: 255; 214; 0
+    Line Style: Lines
+    Line Width: 0.05
+  - Class: rviz_default_plugins/Path
+    Enabled: true
+    Name: Actual robot trace
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /newmetro/actual_trace
+    Value: true
+    Color: 50; 255; 65
+    Line Style: Lines
+    Line Width: 0.05
+  Enabled: true
+  Global Options:
+    Background Color: 38; 38; 38
+    Fixed Frame: map
+  Name: root
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  - Class: rviz_default_plugins/Select
+  Value: true
+  Views:
+    Current:
+      Angle: -1.5708
+      Class: rviz_default_plugins/TopDownOrtho
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Scale: 38
+      Target Frame: <Fixed Frame>
+      Value: TopDownOrtho (rviz_default_plugins)
+      X: -2
+      Y: -2.4
+    Saved: null
+Window Geometry:
+  Height: 900
+  Width: 1500
+  X: 80
+  Y: 70

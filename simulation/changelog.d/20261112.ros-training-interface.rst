@@ -1,0 +1,3 @@
+* Added single-world ROS 2 pedestrian integration for Isaac Lab PhysX tasks, with an externally stepped action term and fixed-size robot-relative observations.
+* Kept pedestrian routes and the ROS sequence continuous across robot episode resets, cleared obstacle velocity history after resets, and isolated the training bridge from the global ROS clock.
+* Synchronized training pedestrian collision bodies through the PhysX tensor view. Migrated training integrations should use ``Ros2TrainingScene`` and ``Ros2PedestrianActionCfg``.

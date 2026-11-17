@@ -1,0 +1,16 @@
+Breaking pedestrian-controller migration
+----------------------------------------
+
+Removed the experimental ORCA controller, its private NavMesh planner, velocity
+execution, gait/root writers and predictive pedestrian waiting coordinator.
+Kept SDK NavMesh navigation and native IRA as the sole pedestrian movement,
+local avoidance and walking-animation controller. Preserved user waypoints,
+speeds, start times, turns, waits, repetition and arrival tolerances.
+
+Removed ``orca`` and ``pedestrian_avoidance`` configuration sections and their
+public Python settings types. Old sections were rejected even when disabled;
+users needed to delete them and use ``avoidance.obstacle_avoidance_enabled``
+and ``avoidance.auto_avoidance_enabled``. Shipped profiles enabled both switches.
+Explicit native switches took precedence over compatibility USD body/trigger
+settings; omitted switches retained the SDK/scene values. Removed stale
+experimental tests, generated test artifacts, instructions and configuration.

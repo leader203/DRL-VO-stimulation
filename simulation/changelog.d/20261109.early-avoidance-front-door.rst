@@ -1,0 +1,11 @@
+Extended pedestrian detection to support earlier avoidance. Added a scene
+override and measured front-position and heading checks before cabin doors
+begin to open, including a bounded swept-clear stance for exiting occupants.
+Reused a measured holding pose when the complete passing route already had
+positive clearance reserve around it.
+Retried early passing checks after a measured change in pedestrian positions
+and gave released queue members time to resume walking before a new passage.
+Limited third-party waiting to pedestrian approaches that would enter the
+protected part of a passing route.
+Released obsolete goal reservations when a door-guided departure reached the
+next original waypoint with sufficient clearance from its previous position.

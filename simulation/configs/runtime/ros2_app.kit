@@ -1,0 +1,29 @@
+[package]
+title = "ROS 2 Pedestrian Simulation"
+version = "0.1.0"
+
+[dependencies]
+"omni.kit.loop-isaac" = {}
+"omni.usd" = {}
+"omni.kit.usd.layers" = {}
+"omni.kit.async_engine" = {}
+"omni.kit.viewport.window" = {}
+"omni.kit.viewport.utility" = {}
+"omni.hydra.rtx" = {}
+"omni.physx" = {}
+"omni.physics.stageupdate" = {}
+"isaacsim.core.simulation_manager" = {}
+"omni.anim.retarget.core" = {}
+"isaacsim.ros2.bridge" = {}
+"isaacsim.core.nodes" = {}
+
+[settings.app]
+name = "ROS2PedestrianSimulation"
+settings.persistent = false
+vulkan = true
+
+[settings]
+# Match the SDK base app: retain diagnostics without a blocking startup dialog.
+persistent.renderer.startupMessageDisplayed = true
+app.player.useFixedTimeStepping = true
+app.player.useFastMode = true

@@ -1,0 +1,21 @@
+ROS 2 route planning and navigation reliability
+----------------------------------------------
+
+* Added a bounded, fully certified start-anchor fallback and returned zero motion
+  when an actual safe start already satisfied the original arrival tolerance.
+  Passing stopped selecting or pulling an already-arrived participant.
+* Sampled wander goals inside the original local range before applying the planning
+  budget, and used actual-start raster connectivity after a failed first attempt.
+  Retained continuous direct-path attempts when raster connectivity was undecided.
+* Scaled slow-route progress checkpoints by the requested speed while retaining
+  the existing no-progress deadline. Updated every nonzero executed velocity's
+  heading under the existing turn constraint.
+* Validated fixed spawns against static clearance, current physical geometry and
+  actual body overlap before constructing actors or ROS resources, without
+  projecting user coordinates or rejecting only comfort-gap deficits.
+* Isolated read-only path and marker failures from navigation replies and committed
+  published-path signatures only after successful publication.
+* Bound successful replies to both sequence and simulation time. Custom DDS clients
+  must advance time consistently with ``dt`` for a new sequence; retries must reuse
+  the complete original sequence/snapshot. Timeline rewinds require a new session.
+  Existing explicit failure replies without timestamps remained compatible.

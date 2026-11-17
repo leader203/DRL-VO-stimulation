@@ -1,0 +1,614 @@
+#usda 1.0
+
+over "World"
+{
+    over "Meshes"
+    {
+        over "Base"
+        {
+            over "Wall_0000"
+            {
+                over "Materials"
+                {
+                    over "MI_68678e47bb07cf00016b4282"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wall_Wall/Materials/Textures/T_68678e47bb07cf00016b4282_color.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Floor_0000"
+            {
+                over "Materials"
+                {
+                    over "MI_671541290745ea0001b17ad5"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_671541290745ea0001b17ad5_color.jpg@
+                        }
+                    }
+
+                    over "MI_5d2d6d78235fc700018322b8"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_5d2d6d78235fc700018322b8_color_front.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_5d2d6d78235fc700018322b8_color_front.jpg@
+                        }
+                    }
+
+                    over "MI_686781bebb07cf00016b3ae4"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Floor_Floor/Materials/Textures/T_686781bebb07cf00016b3ae4_color.jpg@
+                        }
+                    }
+                }
+            }
+        }
+
+        over "Assets"
+        {
+            over "Door_0000"
+            {
+                over "Materials"
+                {
+                    over "MI_65224a436b5ac70001ed1e12"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                        }
+                    }
+
+                    over "MI_650ff3d1e7e5280001ddda1c"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_650ff3d1e7e5280001ddda1c_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_650ff3d1e7e5280001ddda1c_normal.jpg@
+                        }
+                    }
+
+                    over "MI_5adb4ae737b50e6b65bf7c01"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_5adb4ae737b50e6b65bf7c01_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_5adb4ae737b50e6b65bf7c01_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_5adb4ae737b50e6b65bf7c01_normal.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Door_Ac59e6c76c194105972c6f07f2fc79dd/Materials/Textures/T_5adb4ae737b50e6b65bf7c01_color.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Edestalurinal_0001"
+            {
+                over "Materials"
+                {
+                    over "MI_686ca61ccba017000153a4f9"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Edestalurinal_YRJDQHJVAIIZQPTULE888888/Materials/Textures/T_686ca61ccba017000153a4f9_alpha.jpg@
+                        }
+                    }
+                }
+
+                over "Drain"
+                {
+                    over "Materials"
+                    {
+                        over "MI_64aac01142b0ff0001af744d"
+                        {
+                            over "Shader"
+                            {
+                                asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Fpd_ZDO7WWRVAIMLQPTULA888888/Materials/Textures/T_64aac01142b0ff0001af744d_normal.jpg@
+                            }
+
+                            over "PreviewTex_normal"
+                            {
+                                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Fpd_ZDO7WWRVAIMLQPTULA888888/Materials/Textures/T_64aac01142b0ff0001af744d_normal.jpg@
+                            }
+                        }
+                    }
+                }
+            }
+
+            over "Edestalurinal_0002"
+            {
+                over "Materials"
+                {
+                    over "MI_686ca643c1c2b20001b9a36a"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Edestalurinal_YRJDTZRVAIJAMPTUKE888888/Materials/Textures/T_686ca643c1c2b20001b9a36a_alpha.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Edestalurinal_0003"
+            {
+                over "Materials"
+                {
+                    over "MI_686ca61d07948e00019d883d"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Edestalurinal_YRJD7GJVAI7AAPTULE888888/Materials/Textures/T_686ca61d07948e00019d883d_alpha.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Toilet_YREQ6BBVAI7FMPTUJQ888888_KIiuW"
+            {
+                over "Materials"
+                {
+                    over "MI_6877962cae8144000150dc7e"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Toilet_YREQ6BBVAI7FMPTUJQ888888_KIiuW/Materials/Textures/T_6877962cae8144000150dc7e_alpha.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Door_YS2HVXZVALGD2PTUJQ888888_7qcYe"
+            {
+                over "Materials"
+                {
+                    over "MI_688ae528582b930001cc51ed"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                        }
+                    }
+
+                    over "MI_688ae5286c48db00010215a4"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Door_YS3UEUZVAJ2V4PTUKU888888_mdynP"
+            {
+                over "Materials"
+                {
+                    over "MI_6889db54f791960001075518"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Materials/Textures/T_6889db54f791960001075518_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Materials/Textures/T_6889db54f791960001075518_normal.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Partition_0000"
+            {
+                over "Materials"
+                {
+                    over "MI_65224a436b5ac70001ed1e12"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A89f40d820fb74faaA90dE4d2d890b893/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Partition_0001"
+            {
+                over "Materials"
+                {
+                    over "MI_65224a436b5ac70001ed1e12"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A6f1b77af49e54dbf92d1Dcdb54f8bc81/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Partition_0003"
+            {
+                over "Materials"
+                {
+                    over "MI_65224a436b5ac70001ed1e12"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_B346068cE0dc4223Af97Eb34e8078d2b/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Partition_0004"
+            {
+                over "Materials"
+                {
+                    over "MI_65224a436b5ac70001ed1e12"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                            asset inputs:reflectionroughness_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_normal.jpg@
+                        }
+
+                        over "PreviewTex_roughness"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_roughness.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/meshes/Assets/Wardrobe_A1da26ad3B16b4a2d8e44Fc50a530777d/Materials/Textures/T_65224a436b5ac70001ed1e12_color.jpg@
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    over "Cubicles"
+    {
+        over "Cubicle01"
+        {
+            over "Door"
+            {
+                over "Materials"
+                {
+                    over "MI_688ae528582b930001cc51ed"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                        }
+                    }
+
+                    over "MI_688ae5286c48db00010215a4"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Toilet"
+            {
+                over "Materials"
+                {
+                    over "MI_6877962cae8144000150dc7e"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Toilet_YREQ6BBVAI7FMPTUJQ888888_KIiuW/Materials/Textures/T_6877962cae8144000150dc7e_alpha.jpg@
+                        }
+                    }
+                }
+            }
+        }
+
+        over "Cubicle02"
+        {
+            over "Door"
+            {
+                over "Materials"
+                {
+                    over "MI_688ae528582b930001cc51ed"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:diffuse_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_normal.jpg@
+                        }
+
+                        over "PreviewTex_diffuseColor"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae528582b930001cc51ed_color.jpg@
+                        }
+                    }
+
+                    over "MI_688ae5286c48db00010215a4"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:normalmap_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+
+                        over "PreviewTex_normal"
+                        {
+                            asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Materials/Textures/T_688ae5286c48db00010215a4_normal.jpg@
+                        }
+                    }
+                }
+            }
+
+            over "Toilet"
+            {
+                over "Materials"
+                {
+                    over "MI_6877962cae8144000150dc7e"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Toilet_YREQ6BBVAI7FMPTUJQ888888_KIiuW/Materials/Textures/T_6877962cae8144000150dc7e_alpha.jpg@
+                        }
+                    }
+                }
+            }
+        }
+
+        over "Cubicle04"
+        {
+            over "Toilet"
+            {
+                over "Materials"
+                {
+                    over "MI_6877962cae8144000150dc7e"
+                    {
+                        over "Shader"
+                        {
+                            asset inputs:opacity_texture = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/real/shenxinfu/841837/Collected_start/share/Toilet_YREQ6BBVAI7FMPTUJQ888888_KIiuW/Materials/Textures/T_6877962cae8144000150dc7e_alpha.jpg@
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    over "DetailMaterials"
+    {
+        over "Sign_Wash"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/wash.png@
+            }
+        }
+
+        over "Sign_Level"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/level.png@
+            }
+        }
+
+        over "Sign_Cubicle03"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/cubicle03.png@
+            }
+        }
+
+        over "Sign_Cubicle04"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/cubicle04.png@
+            }
+        }
+
+        over "Sign_Cubicle01"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/cubicle01.png@
+            }
+        }
+
+        over "Sign_Cubicle02"
+        {
+            over "Texture"
+            {
+                asset inputs:file = @/home/stardust/Desktop/simulation_EXP_extracted/Sence/Rest_Room_Third_Floor/Collected_third_floor_optimized/optimization/textures/cubicle02.png@
+            }
+        }
+    }
+}
+

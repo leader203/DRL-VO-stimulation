@@ -1,0 +1,2 @@
+* Added ordered character catalogs resolved against the local ROS 2 asset root. The maintained projects switched to a common catalog with the same model order, replacing wrappers tied to the old 6.1 asset path.
+* Included catalog files and resolved character assets in preflight and output protection. Set ``asset_root`` in the ROS 2 navigation settings when running against a different local asset installation.

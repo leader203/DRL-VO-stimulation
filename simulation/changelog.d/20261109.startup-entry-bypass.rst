@@ -1,0 +1,3 @@
+Planned certified detours around nearby pedestrians waiting for their authored
+start time. Aligned a stationary walker to the bypass before moving and retained
+safe following when no route around the parked body was available.

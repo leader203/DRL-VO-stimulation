@@ -1,0 +1,3 @@
+Allowed a queued pedestrian to advance along a bounded safe prefix while the
+owner's complete remaining exit stayed clear. Reused newly certified direct
+goal chords before the next scheduled raster replan.

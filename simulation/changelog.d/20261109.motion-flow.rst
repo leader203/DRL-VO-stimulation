@@ -1,0 +1,11 @@
+Stopped ineffective creeping behind a scheduled stationary pedestrian when
+the observed pose could safely hold. Preserved useful motion around the peer
+and left authored start and dwell times intact.
+
+Kept certified corner previews moving without exact-point braking. Retained
+safe prefixes of ordinary velocity rays clipped by static clearance and
+reconnected departing pedestrians to the same verified queue exit.
+
+Reused hard-clearance cached paths when an optional wider margin no longer
+fit. Kept active door exits ahead of unrelated goal queues until measured
+sweep clearance released the existing lease.

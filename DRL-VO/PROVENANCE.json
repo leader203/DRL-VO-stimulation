@@ -1,0 +1,12 @@
+{
+  "source_training": "/home/user/workspace/social_navigation_runtime_20261010/experiments/newmetro_pedestrians_resume_20261020T131619",
+  "source_steps": 480000,
+  "source_updates": 937,
+  "source_policy": "/home/user/workspace/social_navigation_runtime_20261010/experiments/newmetro_pedestrians_resume_20261020T131619/training/latest.pt",
+  "sha256": "bef18b93c76f5eef245942b0aa1bede03faaf14efcc7a0fbc38e972a989996ca",
+  "physical_pedestrians": 4,
+  "lookahead_m": 0.5,
+  "training": false,
+  "inference": "frozen eval mode, deterministic mean",
+  "training_resume_after_demo": false
+}

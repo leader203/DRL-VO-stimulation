@@ -1,0 +1,33 @@
+#usda 1.0
+
+# 本机机器人引用层：只取 EVT-ROS.usd 的机器人本体 /EVT_3。
+# GroundPlane 是资产内自带的 50x50m 碰撞地面，会和场景地面冲突，保持关闭。
+# ROS_cmd 订阅 /cmd_vel 并驱动四轮关节；kit 已加载 isaacsim.ros2.bridge 后保持启用。
+def "World"
+{
+    def Xform "EVT_3" (
+        prepend references = @../../EVT-ROS.usd@</EVT_3>
+    )
+    {
+        over "GroundPlane" (
+            active = false
+        )
+        {
+        }
+
+        over "ROS_cmd"
+        {
+            over "articulation_controller"
+            {
+                # 资产里这条连接指向不存在的 on_variable_change 节点，替换为有效的 twist 输出。
+                uint inputs:execIn.connect = </World/EVT_3/ROS_cmd/ros2_subscribe_twist.outputs:execOut>
+            }
+
+            over "ros2_context"
+            {
+                uchar inputs:domain_id = 37
+                bool inputs:useDomainIDEnvVar = false
+            }
+        }
+    }
+}

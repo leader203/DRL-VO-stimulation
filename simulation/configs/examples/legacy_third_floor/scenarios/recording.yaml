@@ -1,0 +1,63 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# 历史坐标示例；新 THIRD_FLOOR 场景的路线可达性需重新验证。
+schema_version: 1
+scene:
+  asset_path: ../../../../../../navigation_data_synthesis/assets/Sences/THIRD_FLOOR.usd
+simulation:
+  seed: 42
+pedestrians:
+  assets: ../../../../../assets/Sences/character_assets
+  actors:
+    walker_01:
+      position: [-2.25, 0.75, 0.0]
+      yaw: -60.0
+      speed: 0.7
+      waypoints:
+      - [-1.49991, -0.54903, 0.0]
+      repeat: true
+    walker_02:
+      position: [-2.0, -1.75, 0.0]
+      yaw: 135.0
+      speed: 0.7
+      waypoints:
+      - [-2.70711, -1.04289, 0.0]
+      repeat: true
+    walker_03:
+      position: [2.25, 0.5, 0.0]
+      yaw: 0.0
+      speed: 0.7
+      waypoints:
+      - [3.75, 0.5, 0.0]
+      repeat: true
+    walker_04:
+      position: [0.0, 0.75, 0.0]
+      yaw: 82.5
+      speed: 0.7
+      waypoints:
+      - [0.19578, 2.23717, 0.0]
+      repeat: true
+    walker_05:
+      position: [3.0, 1.75, 0.0]
+      yaw: 172.5
+      speed: 0.7
+      waypoints:
+      - [1.51283, 1.94579, 0.0]
+      repeat: true
+    walker_06:
+      position: [-3.0, 2.0, 0.0]
+      yaw: 0.0
+      speed: 0.7
+      waypoints:
+      - [-2.2, 2.0, 0.0]
+      repeat: true
+    walker_07:
+      position: [-3.75, -2.0, 0.0]
+      yaw: -37.5
+      speed: 0.7
+      waypoints:
+      - [-2.95711, -2.60876, 0.0]
+      repeat: true

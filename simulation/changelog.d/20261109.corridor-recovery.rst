@@ -1,0 +1,3 @@
+Allowed a stopped passer to advance along a certified prefix during a peer's
+retreat. Allowed an ordinary single-waiter queue to resume alongside the
+owner's certified egress when their remaining paths retained separation.

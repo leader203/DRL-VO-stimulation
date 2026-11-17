@@ -1,0 +1,27 @@
+Breaking configuration-default migration
+----------------------------------------
+
+Required explicit scene and character-resource selection instead of inferring a
+historical scene or repository character pool. Callers used ``run PROJECT``,
+``--config FILE`` or ``load_simulation_config(PROJECT)``; ``init`` required
+``--characters DIR`` and the creation API required ``character_assets``. YAML
+could omit the shared pool only when every actor specified its own asset.
+``SimulationConfig()`` no longer selected an example; historical constants remained
+importable and ``--legacy-example`` explicitly selected the deprecated example.
+
+Required explicit training ``expected_count`` and pedestrian action settings.
+Omitted capacity was fixed to ``max(1, expected_count)`` during configuration.
+Resolved motion libraries through character bindings instead of fixed prim names,
+rejected overlapping robot/population destinations, and corrected project-file
+population selection and inspection.
+
+Disabled both navigation cache layers in the default Kit profile after repeated
+startup restored queryable meshes with zero radius metadata in the installed SDK.
+Scene setup rebuilt the mesh; custom Kit profiles retained caller-owned settings.
+Fixed native session shutdown after GUI Quit by closing the remaining USD stage
+synchronously when Kit's update loop had stopped. Preserved native close errors
+and temporary composition files when the stage remained open. Disabled crash
+report uploads and previous-dump upload retries by default for project-owned
+application startup without deleting existing dumps or changing global Kit files.
+Protected effective project YAML, scene, character and motion-library inputs
+from report output overwrites when using file-backed SimulationConfig proxies.

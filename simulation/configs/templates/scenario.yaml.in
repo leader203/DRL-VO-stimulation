@@ -1,0 +1,21 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# 文件路径相对此 YAML；位置单位由 navigation.waypoint_frame 声明。
+# 速度 [m/s]、容差 [m]、时间 [s]、朝向 [deg]；省略 actors 时安全随机出生。
+schema_version: 1
+scene:
+  asset_path: $scene_asset
+$navigation
+simulation:
+  duration: 60.0
+  seed: 42
+  report_path: output/status.json
+pedestrians:
+  count: $count
+  assets: $characters
+$pedestrian_defaults
+
+# 固定路线：添加 actors 并移除 count，人数由 actors 推导；字段见 docs/pedestrian_yaml.md。

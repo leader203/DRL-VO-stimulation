@@ -1,0 +1,61 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# 文件路径相对于此 YAML；坐标 [m]、速度 [m/s]、时间 [s]、朝向 [deg]。
+# 场景必须使用米制 Z-up。省略 actors 时按 count 随机出生并执行默认行为。
+schema_version: 1
+navigation:
+  backend: ros2
+  waypoint_frame: world_m
+  settings_path: ../runtime/ros2_navigation.yaml
+scene:
+  asset_path: "/project/Third_Floor/THIRD_1.usd"
+  layers:
+    - "scene_overrides.usda"
+
+simulation:
+  duration: 120.0
+  seed: 42
+  report_path: output/status.json
+pedestrians:
+  assets: ../runtime/characters.yaml
+
+  defaults:
+    speed: 0.9
+
+  actors:
+    walker_01:
+      behavior: walk
+      position: [-5.59083, -2.05939, 0.0] # 初始世界坐标，m
+      yaw: 0.0 # 出生旋转，deg
+      start_time: 3.0 # 仿真第 3 秒开始行走
+      repeat: true # 沿路线往返并重复
+      waypoints:
+        - position: [-0.28984, -0.69517, 0.0]
+          wait: 2.0 # 到达并完成转向后计时
+          yaw: 90.0 # 到达后的世界朝向
+
+        - position: [-0.13128, -0.59996, 0.0]
+          wait: 4.0
+          yaw: 180.0
+        - position: [-3.01526, 0.22165, 0.0]
+          wait: 4.0
+          yaw: 180.0
+
+    walker_02:
+      behavior: walk
+      position: [2.01784, 1.11961, 0.0] # 初始世界坐标，m
+      yaw: 0.0 # 出生旋转，deg
+      start_time: 3.0 # 仿真第 3 秒开始行走
+      repeat: true # 沿路线往返并重复
+      waypoints:
+        - position: [-2.99617, 1.18446, 0.0]
+          wait: 2.0 # 到达并完成转向后计时
+          yaw: 90.0 # 到达后的世界朝向
+
+    walker_03:
+      behavior: stand
+      position: [3.62263, -1.06119, 0.0]
+      yaw: 180.0

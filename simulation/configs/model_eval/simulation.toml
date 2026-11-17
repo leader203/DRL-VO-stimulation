@@ -1,0 +1,15 @@
+# Model-only evaluation: same Third Floor scene and EVT robot as third_3,
+# but no pedestrian population and no guard veto. The DRL policy publishes
+# /cmd_vel directly; the guard result is logged only.
+
+scenario = "../third_3/simulation.yaml"
+
+[pedestrians]
+enabled = false
+
+[navigation]
+settings_path = "../runtime/ros2_navigation_local.yaml"
+
+[simulation]
+duration = 40.0
+report_path = "output/status.json"

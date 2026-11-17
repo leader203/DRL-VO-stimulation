@@ -1,0 +1,30 @@
+# All geometry and navigation quantities use ROS map coordinates [m], [s], [rad].
+# Local-machine override of ros2_navigation.yaml: asset_root and ROS setup point
+# at this machine instead of the original /project/... installation.
+resolution_m: 0.02
+floor_tolerance_m: 0.02
+floor_clearance_m: 0.01
+body_radius_m: 0.25
+body_height_m: 1.8
+# Extra obstacle clearance above the physical radius, including placement and door sweeps.
+map_clearance_m: 0.0275
+# Prefer extra corner clearance where a short certified alternative exists.
+preferred_path_clearance_m: 0.05
+# Target gap between pedestrian body surfaces [m].
+pair_clearance_m: 0.225
+# Optional fixed-spawn correction radius and A* goal projection limit [m].
+spawn_tolerance_m: 0.0
+goal_projection_tolerance_m: null
+# Maximum displacement from a temporary yield origin [m].
+max_yield_distance_m: 0.4
+control_hz: 60
+# Generated return legs face their route; original waypoint headings stay unchanged.
+auto_return_heading: follow_route
+# Keep wall approach independent from pedestrian anticipation [s].
+obstacle_time_horizon_s: 0.5
+# Query more distant oncoming pedestrians for early steering [m].
+neighbor_distance_m: 4.8
+asset_root: /home/stardust/isaacsim/assets/6.1_people
+ros_setup_path: /tmp/pedstrain_ros_env.sh
+ros_namespace: /pedestrian_sim
+ros_domain_id: 37

@@ -1,0 +1,4 @@
+Accepted explicit routes ending at their declared initial position and retained
+that endpoint's heading and dwell when repeating the closed route. Preserved
+the existing automatic return traversal for open repeated routes.
+Added read-only SI successor-target metadata without advancing schedules.

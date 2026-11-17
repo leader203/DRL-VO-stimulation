@@ -1,0 +1,2 @@
+Retained original exception types and tracebacks for the first schedule failure,
+including errors with empty messages, without changing failure ownership.

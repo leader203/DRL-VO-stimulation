@@ -1,0 +1,51 @@
+{
+  "source": "/home/lfm/Downloads/sfm_orca_pack_20261029/hunav_agent_manager/orca/vendor/RVO2-2.0.2",
+  "upstream": "https://github.com/snape/RVO2",
+  "declared_tag": "v2.0.2",
+  "declared_commit": "c96a6ec8328492bae0721e59774026a119a60b4a",
+  "license": "Apache-2.0",
+  "notes": "Reference vendor includes passive-agent modifications; hashes identify the supplied snapshot, not an independently verified upstream commit.",
+  "reference_sha256": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "src/Agent.cpp": "de76d5bdd408f8c714cac010db6efe24406c113c822965a85c02fab2c069f7f1",
+    "src/Agent.h": "cf67414bb50023584f859fd956d1317634e520e23e5dcb031f1d5b4337fa6a4e",
+    "src/CMakeLists.txt": "39d3502a13ea63913989d62b2a2b8a64f50c441fec6d5040ff85ace097c3813b",
+    "src/Definitions.h": "09fd40b414a38ca34a076436f89cb04d122747c31a023d679b54562983d06321",
+    "src/KdTree.cpp": "7588cbe082757101a499379b8c991df6e1f3b0a9ca3a2a2f0e08f26152b41f06",
+    "src/KdTree.h": "bb7cfd1159540831c08cb69c7ffad42f601fdc7a5ef351014d4b6dc152e0a765",
+    "src/Obstacle.cpp": "f59bcd473b60e20fd7cd3e86950327e2e282e861c5a5b5ad7b9f4417859b5cc9",
+    "src/Obstacle.h": "50effb9747913b11d7cc97425b551fa73ddb2684328dfe135528b85f40e1f9fc",
+    "src/RVO.h": "58404677263716fbed5453948b38ca27d265a0b4b5f730226b0e31586b83a87f",
+    "src/RVOSimulator.cpp": "29f5c8268520ffc0345de02fe85fc044f3145ec6920110143b512f8910fd442d",
+    "src/RVOSimulator.h": "4a319f4a7c2367d62a136f1a53533667645aa94a8be5d412eb0cae40add749c0",
+    "src/Vector2.h": "f0011aae6fbcdc14a777cabbc19b30f547af08858a4b485fcfcae6b1602a8738"
+  },
+  "local_patches": [
+    "Added per-agent pairPadding used only in agent-agent combined radius.",
+    "Added obstaclePadding used only for static obstacle coverage and half-planes; it does not change pair clearance.",
+    "Original simulation glue is bridge.cpp (BSD-3-Clause); reference HuNav glue and missing LightSFM were not copied.",
+    "Measured obstacle translation shifts full-responsibility obstacle ORCA half-planes into world velocity; obstacle-neighbor coverage includes measured obstacle speed.",
+    "KD-tree generated split vertices retain their obstacle velocity.",
+    "C ABI v2 accepts a velocity for each static/dynamic boundary segment.",
+    "C ABI bridge skipped only exactly coincident float32 segment endpoints before creating RVO2 boundary edges.",
+    "C ABI v3 separated pedestrian and obstacle prediction horizons without changing the RVO2 plane construction algorithm.",
+    "The C ABI heading projection enforced the turn sector for every nonzero velocity and exact zero velocity at a zero speed cap, including submicron candidates."
+  ],
+  "installed_sha256": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "src/Agent.cpp": "e640a1bc61f610422c4761e52d91bc9d13451ad6639fe85c132a41fbff40d2fe",
+    "src/Agent.h": "737f63d6b6fb9a2d5c193fdab08f5328201ea872d26c965f1f5629e6e799d04d",
+    "src/CMakeLists.txt": "39d3502a13ea63913989d62b2a2b8a64f50c441fec6d5040ff85ace097c3813b",
+    "src/Definitions.h": "09fd40b414a38ca34a076436f89cb04d122747c31a023d679b54562983d06321",
+    "src/KdTree.cpp": "3fb43f2ec0dea2a0e1c6bb39390a32ee4bccd022892a65551825a1b95d5bdc54",
+    "src/KdTree.h": "bb7cfd1159540831c08cb69c7ffad42f601fdc7a5ef351014d4b6dc152e0a765",
+    "src/Obstacle.cpp": "f59bcd473b60e20fd7cd3e86950327e2e282e861c5a5b5ad7b9f4417859b5cc9",
+    "src/Obstacle.h": "46b7b0fa6c28b2bf8f2bc8d78689d391347ed1aa9d603ec4c00da6f2662b3b53",
+    "src/RVO.h": "58404677263716fbed5453948b38ca27d265a0b4b5f730226b0e31586b83a87f",
+    "src/RVOSimulator.cpp": "6a46a8197e89ece03014ea48ddf87511e246816912fd6edb472f6894b25016bb",
+    "src/RVOSimulator.h": "c69d1b28f8238c6426623cf42747f18f8a2ed2b818a05bce1c4e04b46ac20fdc",
+    "src/Vector2.h": "f0011aae6fbcdc14a777cabbc19b30f547af08858a4b485fcfcae6b1602a8738"
+  },
+  "bridge_sha256": "e3754803de464d6f5a9a615c2d1348ca8b4c182b9127cd890d7c80c850ba2450",
+  "bridge_abi_version": 3
+}

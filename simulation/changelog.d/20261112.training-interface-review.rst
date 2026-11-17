@@ -1,0 +1,5 @@
+* Required a validated pedestrian population when constructing a training profile and applied the same IRA scene compatibility checks in preflight and training setup.
+* Prevented replacement of a PhysicsScene from silently disabling scene geometry. Move non-physics-scene descendants to an editable training layer before setup.
+* Deferred native character registration cleanup until the stage closed and prevented a rejected ROS 2 stage open from reusing or closing an unrelated stage.
+* Preserved the population declared inside a profile when that profile was supplied as the standalone pedestrian configuration.
+* Unified ROS 2 motion-library resolution across preflight, playback, and output protection, including local asset-root file URIs.

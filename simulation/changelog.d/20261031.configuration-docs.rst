@@ -1,0 +1,4 @@
+Removed redundant per-actor walk and repeat declarations from the third_3
+profile, corrected timing comments, and preserved effective pedestrian plans.
+Clarified configuration ownership, native avoidance, authored NavMesh precedence,
+and current validation boundaries.

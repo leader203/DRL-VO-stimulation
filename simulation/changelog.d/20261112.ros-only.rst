@@ -1,0 +1,3 @@
+* Removed the IRA pedestrian runtime, native recording, and the IRA-only Isaac Lab training adapter. ROS 2 is the default and only pedestrian backend.
+* Replaced IRA-derived population data with ROS scene and asset configuration. Use a ROS 2 project YAML or a TOML profile with ``scenario = "simulation.yaml"`` and run it with ``run PROJECT`` or ``workflow PROJECT``.
+* Removed IRA launch profiles and switches. Integrations that imported the old IRA session or training bridge must migrate to ``Ros2SimulationSession`` or supply their own training integration.

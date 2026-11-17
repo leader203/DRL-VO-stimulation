@@ -1,0 +1,14 @@
+Preserved complete authoring-layer metrics and selected variants when measuring
+layered motion libraries. Retained world scale in robot yielding geometry and
+pedestrian radii, and preserved physical capsule height under nonuniform scale
+during radius changes.
+
+Converted camera optics to tenths of scene units and validated recording cadence
+against observed simulation seconds instead of USD time-code rate. Added source
+time-code rate and maximum observed step to recording diagnostics.
+
+Rejected robot assets and explicitly metered overlays with incompatible length,
+mass or up-axis metadata before composition. Such inputs previously loaded with
+incorrect physical interpretation; users needed to provide a converted asset or
+overlay. Unmetered overlays retained the destination frame. Runtime layers
+preserved destination mass units as well as length and temporal metadata.

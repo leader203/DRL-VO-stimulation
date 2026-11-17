@@ -1,0 +1,209 @@
+{
+  "checkpoint": "/home/user/workspace/social_navigation_runtime_20261010/project/data/pretrained_models/local_amass_finetune/speed_conservative_20261010/Humanoid_AMASS.pth",
+  "checkpoint_sha256": "cb2783690a683cbfbbf14e0788d99a2a49d0da0513d11399682db776deb3553c",
+  "original_manifest": "/home/user/workspace/social_navigation_runtime_20261010/project/resources/releases/pedestrians_20261010/provenance/amass_manifest_labeled_v7.json",
+  "original_manifest_sha256": "68d41be28908f28a09c47f7658af39d55fad01b32212bd7c0ced2b1e6b1489ca",
+  "local_bank": "/home/user/workspace/NavIsaaclab2.0/Assets/motion/amass_smpl_validation.pt",
+  "local_bank_sha256": "651e930368d8a5d5ea026015eeadd5875a9e64ddf1b271fa7cae122ab97d8c68",
+  "mapped_validation_clips": [
+    {
+      "original_id": 0,
+      "local_id": 0,
+      "source": "HumanEva/S3/Walking_3_poses.motion"
+    },
+    {
+      "original_id": 1,
+      "local_id": 1,
+      "source": "HumanEva/S3/Jog_3_poses.motion"
+    },
+    {
+      "original_id": 4,
+      "local_id": 4,
+      "source": "HumanEva/S3/Jog_1_poses.motion"
+    },
+    {
+      "original_id": 10,
+      "local_id": 10,
+      "source": "HumanEva/S1/Walking_3_poses.motion"
+    },
+    {
+      "original_id": 11,
+      "local_id": 11,
+      "source": "HumanEva/S1/Jog_3_poses.motion"
+    },
+    {
+      "original_id": 14,
+      "local_id": 14,
+      "source": "HumanEva/S1/Jog_1_poses.motion"
+    },
+    {
+      "original_id": 19,
+      "local_id": 19,
+      "source": "HumanEva/S2/Walking_3_poses.motion"
+    },
+    {
+      "original_id": 20,
+      "local_id": 20,
+      "source": "HumanEva/S2/Jog_3_poses.motion"
+    },
+    {
+      "original_id": 23,
+      "local_id": 23,
+      "source": "HumanEva/S2/Jog_1_poses.motion"
+    },
+    {
+      "original_id": 26,
+      "local_id": 26,
+      "source": "HumanEva/S2/Walking_1_poses.motion"
+    },
+    {
+      "original_id": 234,
+      "local_id": 234,
+      "source": "SFU/0008/0008_Walking002_poses.motion"
+    },
+    {
+      "original_id": 235,
+      "local_id": 235,
+      "source": "SFU/0008/0008_Walking001_poses.motion"
+    },
+    {
+      "original_id": 242,
+      "local_id": 242,
+      "source": "SFU/0005/0005_Jogging001_poses.motion"
+    },
+    {
+      "original_id": 244,
+      "local_id": 244,
+      "source": "SFU/0005/0005_Walking001_poses.motion"
+    },
+    {
+      "original_id": 245,
+      "local_id": 245,
+      "source": "SFU/0005/0005_BackwardsWalk001_poses.motion"
+    },
+    {
+      "original_id": 247,
+      "local_id": 247,
+      "source": "SFU/0017/0017_RunningOnBench002_poses.motion"
+    },
+    {
+      "original_id": 253,
+      "local_id": 253,
+      "source": "SFU/0007/0007_Walking001_poses.motion"
+    },
+    {
+      "original_id": 254,
+      "local_id": 254,
+      "source": "SFU/0018/0018_Walking001_poses.motion"
+    },
+    {
+      "original_id": 257,
+      "local_id": 257,
+      "source": "SFU/0018/0018_DanceTurns002_poses.motion"
+    },
+    {
+      "original_id": 259,
+      "local_id": 259,
+      "source": "SFU/0018/0018_DanceTurns001_poses.motion"
+    },
+    {
+      "original_id": 260,
+      "local_id": 260,
+      "source": "SFU/0018/0018_Catwalk001_poses.motion"
+    },
+    {
+      "original_id": 261,
+      "local_id": 261,
+      "source": "SFU/0018/0018_Moonwalk001_poses.motion"
+    }
+  ],
+  "scope": "New user-authorized 20261016 batch; latest map 8 headings 3cm; fresh original DRLVO initialization",
+  "original_bank_byte_identity_claimed": false,
+  "screenshots": false,
+  "automatic_resets": false,
+  "resources": {
+    "diffusion_checkpoint": {
+      "path": "/home/user/workspace/social_navigation_runtime_20261010/project/data/pretrained_models/paper_references/trace/ckpt/trace/orca_mixed/iter40000.ckpt",
+      "sha256": "fd6ba631f4ccaa1a486b7cff192dfc17c5a7dd4a1058dd57830c854eaa7b9257",
+      "bytes": 376736841
+    },
+    "diffusion_config": {
+      "path": "/home/user/workspace/social_navigation_runtime_20261010/project/data/pretrained_models/paper_references/trace/ckpt/trace/orca_mixed/config.json",
+      "sha256": "35a5fb329e72c5b2988e90ab58fb443b72303feb0558b4d954b8fb3aecbe3fbd",
+      "bytes": 18814
+    },
+    "amp_checkpoint": {
+      "path": "/home/user/workspace/social_navigation_runtime_20261010/project/data/pretrained_models/local_amass_finetune/speed_conservative_20261010/Humanoid_AMASS.pth",
+      "sha256": "cb2783690a683cbfbbf14e0788d99a2a49d0da0513d11399682db776deb3553c",
+      "bytes": 39977445
+    },
+    "amass_manifest": {
+      "path": "/home/user/workspace/social_navigation_runtime_20261010/project/data/diffusion_amp/amass_style_2848/manifest_labeled_v7.json",
+      "sha256": "68d41be28908f28a09c47f7658af39d55fad01b32212bd7c0ced2b1e6b1489ca",
+      "bytes": 9507694
+    }
+  },
+  "scene": "NewMetro",
+  "actor_count": 4,
+  "profile_path": "/home/user/workspace/social_navigation_runtime_20261010/project/configs/reproduction/four_scene/NewMetro_profile.json",
+  "profile_sha256": "c64f742235ed04d5fd695e37e853a7b6b2d0ecf5b7b0de8298194c271e0b3919",
+  "scene_config_path": "/home/user/workspace/social_navigation_runtime_20261010/project/configs/reproduction/four_scene/NewMetro_scene.yaml",
+  "scene_config_sha256": "e1ef3ef25d97eb48a8cca70ef93dba5fcc104ae87574e37b80bf40c518d79e36",
+  "scene_source": {
+    "path": "/home/user/workspace/social_navigation_runtime_20261010/project/data/scene_resources/tested_exact/NewMetro_static_v2.usda",
+    "bytes": 15562,
+    "sha256": "d745b909bc9ec4206cd530f23c93341288a431c8642a48b04e24734aff553a3b"
+  },
+  "local_static_mapping_repeated": false,
+  "collision_safety_validated": false,
+  "camera_control": "user",
+  "recording": false,
+  "training": true,
+  "preview_code_sha256": {
+    "show_newmetro_preview.py": "5b269cfd89f306eed2f7503ffd258cb4728f279ec775c2b81ad0d25e5890e59b",
+    "prepare_newmetro_preview.py": "cc03c2c2b6bd7671f169920ed26216aab8f2ce42dd623141b06a20159f5cb383",
+    "show_newmetro_robot_preview.py": "68e9aba0d941869d85de0f8df06693614a1f0eb0b5e3ba4f2a7bd91df90e0a02",
+    "prepare_newmetro_robot_preview.py": "7a5a908d197770c8314db3b9cc6bfb191c2c0b453e2fce590fe4f8ef3f36bb4b",
+    "robot_preview_adapter.py": "56accf1c0b03c5703d1a542133e39dc66e09434f7ff053e8ab83b71a33581cff",
+    "lidar_preview_adapter.py": "b4362b7a601af0d6337afe2c63205a1b145f2d50bbe3550cad7b014cdf26d246",
+    "robot_smoke_metrics.py": "bd360fbec3ef6e4c44ad99bca06033ea907a9104208627dd0e8f5bb1b9877210",
+    "teleop_robot_terminal.py": "cfc6d1505ad84b4560a56166f45fdf08b3eb04e259fd922a7dcd133187485ea0",
+    "apply_preview_performance_patch.py": "0cede114790acf8eaa6ab07ffdbee3299e4aea9f0f46d38bb3179249e95cbffa",
+    "robot_pedestrian_neighbor.py": "328f90d05d08f3304d55d5e3b5cc3bda6526333f08542d84b80abb69e7b466c4",
+    "pedestrian_robot_stop_guard.py": "3a4d8d71cfa32d9695cb16ab5d64eb44d9c15c59a6f3da202fe12773918db911",
+    "preview_runtime_optimization.py": "b92ab6bb169590263765658ba513bf5813967d776e319649d329f22279f9a155",
+    "preview_progress.py": "db6f70fa52c11044e3c381eb6e125c74d614c08ad5461e06daa7155382e2e41c",
+    "manual_preview_planner_wait.py": "8a99657bf6d26d1380386edbcb8a1f5bdcd48f79ed370f7b4b4002411c4da395",
+    "sfm_amp_preview.py": "6a3dec76eb2d9cb697b6e669b7e9a223ea5507574408f524dedbf0c92f6c2361",
+    "usd_only_scene_two_preview.py": "d48d58fc88de07689fc54e9254f01cbf6a26f3980aebef3a0b4274a4b9bd86c1",
+    "door_pose_preview.py": "eee362e83c93aba36ea5b2bfe8469084ffe11151f51f111f836f19f8b48cb631",
+    "continuous_trace_preview.py": "39e6313d8c8b165eaeb1f18b379e63037a6c633221bfb04bc0b7d1e4083dd8c2",
+    "continuous_trace_worker.py": "d7fc6d5269de044940758b9f3a82b7c3d74b45f2b304c956c71013ef781bfccd"
+  },
+  "robot_usd": "/home/user/workspace/social_navigation_runtime_20261010/project/resources/releases/pedestrians_20261010/robot/EVT-EXP.usd",
+  "robot_sha256": "d5e82de58510753ddaf6160a185d7c5c64333f0089eb40b3c98e6f9bd7837ab6",
+  "robot_spawn_xy": [
+    -6.85,
+    -1.65
+  ],
+  "robot_spawn_yaw_rad": 1.5707963267948966,
+  "robot_goal_xy": [
+    -10.5,
+    -1.65
+  ],
+  "robot_goal_region": "NewMetro shared corridor / right entrance held-out target",
+  "robot_spawn_region": "Explicit preview interaction start",
+  "robot_spawn_historical_grid_clearance_m": 0.9585786437626905,
+  "robot_control": "physical wheel velocity targets; no root velocity injection or pose integration",
+  "navigation_robot": true,
+  "RL_training": true,
+  "sensor_config": {
+    "sensors": 2,
+    "beams_per_sensor": 2000,
+    "sim_rate_hz": 15,
+    "backend": "PhysX scene queries",
+    "dynamic_pedestrian_colliders_included": true,
+    "carrying_robot_excluded": true,
+    "recording": false
+  }
+}

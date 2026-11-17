@@ -1,0 +1,3 @@
+Added launch-local ROS 2 navigation YAML selection to ``run`` and ``workflow``.
+Added configured navigation radii and center distances to inspection reports,
+and rejected overflow in the combined obstacle clearance before launch.

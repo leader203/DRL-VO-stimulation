@@ -1,0 +1,10 @@
+Validated selected Kit TOML and declared asset-root structure before application
+startup. Reused the same reader for project creation, inspection and output
+protection. Rejected empty character pools before creating project directories.
+Added effective native avoidance switches to configuration previews while
+retaining declared settings.
+
+Moved the legacy recording example's outputs into its own output directory and
+added a local status report to the third example. Users retaining an older output
+location needed to set simulation.report_path and recording.output_path explicitly
+in the recording profile; existing recordings remained protected from overwrite.

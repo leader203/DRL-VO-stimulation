@@ -1,0 +1,25 @@
+Aligned flat and mixed character pools with offline discovery by adapting direct
+USD/USDA entries through session-owned wrappers. Preserved native selection for
+ordinary nested pools, validated effective file-proxy scenes, and retained consumed
+YAML sources in dependency reports.
+
+Scoped recording and pause readiness to the configured population and recorded
+actual assembled plan snapshots. Preserved original failures when metadata writes
+also failed. Retained embedded layers until CLOSED and added retryable
+TrainingScene.close cleanup. Training owners needed to close their environment
+and stage before releasing temporary layers.
+
+Preserved replacement animation owners during preview cleanup, rejected invalid
+training units and uneditable physics ownership before scene mutation, and
+validated optional robot-yield quantities before unit conversion.
+
+Counted physics scenes inside instances before native overrides and rejected
+uneditable overrides without creating a second scene. Preserved primary runtime
+failures when scene or application cleanup also failed.
+
+Normalized consumed Python scenario compilation inputs to absolute local paths,
+preserving frozen arguments and the exact SDK motion-library string token.
+Explicit Path values were treated as local files; YAML/TOML references retained
+their declaring-file base, and output-path semantics remained unchanged.
+Callers requesting the SDK motion-library token needed to pass the default
+string or omit motion_library, instead of wrapping the token in Path.

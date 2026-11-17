@@ -1,0 +1,8 @@
+Fixed automated recording from user TOML profiles by flattening the effective
+overrides into a YAML-backed snapshot without changing source files or duplicating
+scene layers. Preserved recording, navigation, population and robot overrides.
+
+Fixed cancellation reports, owned descendant-process cleanup and non-BMP path
+serialization. Made viewport restoration and resource cleanup independent of
+failed state observers while preserving the original error, and checked camera
+projection and clipping ownership during capture.

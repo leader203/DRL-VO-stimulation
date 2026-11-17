@@ -1,0 +1,28 @@
+Improved ROS pedestrian goal and door coordination
+------------------------------------------------
+
+* Added original-goal occupancy queues and departure priority without changing
+  user waypoints, arrival tolerance, headings, waits or pedestrian clearance.
+* Added bounded indoor door-closing refuges with measured closure, return to
+  the original arrival position and restoration of heading and remaining dwell.
+* Added ``automaticDoor:exclusiveEntry`` (default true) for occupied-room entry
+  exclusion. Shared public doors can explicitly set it to false; custom
+  ``door_specs`` retain shared access when ``exclusive_entry`` is omitted.
+* Preserved outgoing door access during goal queues and added bounded departure
+  yielding after the original dwell to release door/goal admission cycles.
+* Retained original global paths across temporary interactions so door jambs
+  could not cause alternating waiting and unauthorized small walking steps.
+* Kept certified departure detours until pedestrians had actually passed their
+  queues, and reused admitted paths instead of planning from scratch each tick.
+* Included current non-controlled physical obstacles in ordinary and cooperative
+  route planning, and checked random placement against current body-height geometry.
+* Reused complete physical exit certificates before repeated searches and cached
+  only safely isolated immutable goal projections, avoiding callback timeouts.
+* Searched inner refuge positions and required an actual exit certificate before
+  treating a nearby refuge as ready, without changing displacement or clearance limits.
+* Reported optional closing as blocked when no safe refuge existed within the
+  original 0.4 m bound, while retaining mandatory passage and collision failures.
+* Reduced distant dynamic-polygon checking cost using a conservative geometric
+  certificate while retaining the original near-contact calculation.
+* Extended saved-run verification to exclude temporary door motion from the
+  original dwell and verify the restored waypoint heading before dwelling.

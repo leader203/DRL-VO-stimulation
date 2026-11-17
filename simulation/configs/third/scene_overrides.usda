@@ -1,0 +1,832 @@
+#usda 1.0
+(
+    customLayerData = {
+        bool doorLeafCollision = 0
+        double navigationBodyClearance_m = 0.27
+        string sourceScene = "/project/EXP/IsaacLab/src/navigation_data_synthesis/assets/THIRD.usd"
+        string sourceSha256 = "0dd407b061407e0885bc5baba5928968763b6e94bfa5d16dd4a22fc31694ad61"
+    }
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def "World"
+{
+    over "AutomaticDoors"
+    {
+        custom double automaticDoor:approachDistance = 0.75
+        custom double automaticDoor:closeDelay = 0.35
+        custom double automaticDoor:doorwayDepth = 0.05
+        custom double automaticDoor:speed = 120
+
+        over "Graph"
+        {
+            over "Controller"
+            {
+                custom string inputs:script = """# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+\"\"\"THIRD scene-local visual door controller; fixed frames retain their collisions.
+
+Embedded in this scene layer's Script Node. Uses the Kit SDK directly and has no
+import or path dependency on the pedestrian simulation project.
+\"\"\"
+
+from dataclasses import dataclass
+from math import isfinite
+
+
+@dataclass(frozen=True)
+class DoorTrigger:
+    \"\"\"Doorway trigger in a meter-based, Z-up frame with the portal normal along Y.
+
+    Attributes:
+        approach_distance_m: Maximum actor-center approach distance [m].
+        doorway_depth_m: Half-depth of the portal holding strip [m], before radius.
+        half_width_m: Half-width of the clear portal [m].
+        approach_margin_m: Extra lateral approach allowance [m].
+        minimum_speed_m_s: Minimum speed toward the portal to open from afar [m/s].
+    \"\"\"
+
+    approach_distance_m: float = 0.75
+    doorway_depth_m: float = 0.05
+    half_width_m: float = 0.375
+    approach_margin_m: float = 0.03
+    minimum_speed_m_s: float = 0.08
+
+    def requests_open(
+        self, position_m: tuple[float, float, float], normal_velocity_m_s: float, radius_m: float
+    ) -> bool:
+        \"\"\"Return whether this actor approaches or overlaps the doorway.
+
+        Args:
+            position_m: Actor center relative to the doorway center [m].
+            normal_velocity_m_s: Signed velocity along the portal's Y normal [m/s].
+            radius_m: Actor's horizontal occupancy radius [m].
+        \"\"\"
+        x, y, z = position_m
+        if not all(isfinite(v) for v in (*position_m, normal_velocity_m_s, radius_m)) or radius_m < 0:
+            return False
+        if not -0.2 <= z <= 2.2:
+            return False
+        doorway = abs(x) <= self.half_width_m + radius_m and abs(y) <= self.doorway_depth_m + radius_m
+        approaching = (
+            abs(x) <= self.half_width_m + self.approach_margin_m
+            and abs(y) <= self.approach_distance_m
+            and (
+                (y > 0 and normal_velocity_m_s < -self.minimum_speed_m_s)
+                or (y < 0 and normal_velocity_m_s > self.minimum_speed_m_s)
+            )
+        )
+        return doorway or approaching
+
+
+class AutomaticDoors:
+    \"\"\"Open on approach from either side; close after the doorway clears.
+
+    Actors are SkelRoots, character controllers, robot articulations, or prims
+    tagged with ``automaticDoor:actorType`` (``pedestrian`` or ``robot``).
+    Optional ``automaticDoor:actors`` targets on this prim register actor roots.
+    Use ``automaticDoor:posePrim`` on an actor to select its moving base link.
+    Distances are measured in scene coordinates [m]; this asset uses meters.
+    \"\"\"
+
+    def __init__(self, control_prim):
+        \"\"\"Bind the scene's door configuration and subscribe to timeline stop events.\"\"\"
+        import omni.timeline
+        import omni.usd
+
+        self.prim = control_prim
+        self.prim_path = control_prim.GetPath()
+        self.stage = control_prim.GetStage()
+        self.usd_context = omni.usd.get_context()
+        self.timeline = omni.timeline.get_timeline_interface()
+        self.on_init()
+        self._timeline_subscription = self.timeline.get_timeline_event_stream().create_subscription_to_pop(
+            self._on_timeline_event, name=\"ThirdFloorAutomaticDoors\"
+        )
+
+    def _on_timeline_event(self, event):
+        import omni.timeline
+
+        if event.type == int(omni.timeline.TimelineEventType.STOP):
+            self.on_stop()
+
+    def on_init(self):
+        \"\"\"Create session-owned drive targets without editing the source scene.\"\"\"
+        import omni.physx
+        import usdrt
+        from pxr import Sdf
+
+        self._physics = omni.physx.get_physx_interface()
+        self._fabric = usdrt.Usd.Stage.Attach(self.usd_context.get_stage_id())
+        self._actors = []
+        self._previous = {}
+        self._doors = []
+        self._scan_elapsed = 0.5
+        self._elapsed = 0.0
+        self._running = False
+        self._owned_layer = Sdf.Layer.CreateAnonymous(\"automatic_doors_runtime.usda\")
+        self.stage.GetSessionLayer().subLayerPaths.append(self._owned_layer.identifier)
+
+    def _value(self, prim, name, default):
+        value = prim.GetAttribute(\"automaticDoor:\" + name).Get()
+        return default if value is None else value
+
+    def on_play(self):
+        \"\"\"Initialize closed doors and actor discovery on the first playback tick.\"\"\"
+        from pxr import Gf
+
+        if self._running:  # Pause/resume keeps hysteresis and velocity history.
+            return
+        self._running = True
+        self._elapsed = 0.0
+        self._previous.clear()
+        self._doors = []
+        for config in self.prim.GetChildren():
+            targets = config.GetRelationship(\"automaticDoor:joint\").GetTargets()
+            if not targets:
+                continue
+            joint = self.stage.GetPrimAtPath(targets[0])
+            self._doors.append(
+                {
+                    \"config\": config,
+                    \"joint\": joint,
+                    \"center\": self._value(config, \"center\", Gf.Vec3d(0)),
+                    \"until\": 0.0,
+                    \"target\": 0.0,
+                }
+            )
+        self._scan_actors()
+        self._write_targets(0.0)
+
+    def on_stop(self):
+        \"\"\"Clear runtime drive targets and motion history for the next playback.\"\"\"
+        self._running = False
+        self._actors = []
+        self._previous.clear()
+        self._doors = []
+        self._owned_layer.Clear()
+
+    def on_destroy(self):
+        \"\"\"Release the timeline subscription and remove the owned session layer.\"\"\"
+        self._timeline_subscription = None
+        self.on_stop()
+        layers = self.stage.GetSessionLayer().subLayerPaths
+        if self._owned_layer.identifier in layers:
+            layers.remove(self._owned_layer.identifier)
+
+    def _scan_actors(self):
+        from pxr import Usd, UsdPhysics
+
+        explicit = set(self.prim.GetRelationship(\"automaticDoor:actors\").GetTargets())
+        excluded = self.prim.GetRelationship(\"automaticDoor:environmentBodies\").GetTargets()
+        candidates = []
+        for prim in self.stage.Traverse():
+            path = prim.GetPath()
+            if any(path.HasPrefix(p) for p in excluded):
+                continue
+            kind = self._value(prim, \"actorType\", \"\")
+            if kind == \"ignore\":
+                continue
+            schemas = prim.GetAppliedSchemas()
+            human = prim.GetTypeName() == \"SkelRoot\"
+            human = human or any(\"CharacterController\" in x for x in schemas)
+            if kind not in (\"pedestrian\", \"robot\"):
+                if human:
+                    kind = \"pedestrian\"
+                elif prim.HasAPI(UsdPhysics.ArticulationRootAPI) or path in explicit:
+                    kind = \"robot\"
+                else:
+                    continue
+            if any(path.HasPrefix(row[\"prim\"].GetPath()) for row in candidates):
+                continue
+            pose_targets = prim.GetRelationship(\"automaticDoor:posePrim\").GetTargets()
+            pose = self.stage.GetPrimAtPath(pose_targets[0]) if pose_targets else prim
+            if not pose.HasAPI(UsdPhysics.RigidBodyAPI) and kind == \"robot\":
+                pose = next((p for p in Usd.PrimRange(prim) if p.HasAPI(UsdPhysics.RigidBodyAPI)), pose)
+            candidates.append({\"prim\": prim, \"pose\": pose, \"kind\": kind})
+        self._actors = candidates
+        active = {str(a[\"prim\"].GetPath()) for a in candidates}
+        self._previous = {p: value for p, value in self._previous.items() if p in active}
+        self._scan_elapsed = 0.0
+
+    def _position(self, actor, cache):
+        import carb
+        import usdrt
+        from pxr import Gf, UsdPhysics
+
+        prim, pose = actor[\"prim\"], actor[\"pose\"]
+        if not prim.IsValid() or not pose.IsValid() or not prim.IsActive():
+            return None
+        if actor[\"kind\"] == \"pedestrian\":
+            try:
+                import omni.anim.graph.core as animation
+
+                character = animation.get_character(str(prim.GetPath()))
+                if character:
+                    pos, rot = carb.Float3(0, 0, 0), carb.Float4(0, 0, 0, 1)
+                    character.get_world_transform(pos, rot)
+                    return Gf.Vec3d(*pos)
+            except ImportError:
+                pass
+        if pose.HasAPI(UsdPhysics.RigidBodyAPI):
+            state = self._physics.get_rigidbody_transformation(str(pose.GetPath()))
+            if state.get(\"ret_val\"):
+                return Gf.Vec3d(*state[\"position\"])
+        rt_prim = self._fabric.GetPrimAtPath(usdrt.Sdf.Path(str(pose.GetPath())), False)
+        if rt_prim:
+            transform = usdrt.Rt.Xformable(rt_prim)
+            if transform.HasWorldXform():
+                position = transform.GetWorldPositionAttr().Get()
+                if position is not None:
+                    return Gf.Vec3d(*position)
+        return cache.GetLocalToWorldTransform(pose).ExtractTranslation()
+
+    def _write_targets(self, delta_time):
+        from pxr import Usd, UsdPhysics
+
+        speed = float(self._value(self.prim, \"speed\", 90.0))
+        with Usd.EditContext(self.stage, self._owned_layer):
+            for door in self._doors:
+                wanted = float(self._value(door[\"config\"], \"openAngle\", 88.0)) if door[\"until\"] > self._elapsed else 0.0
+                step = speed * delta_time
+                target = door[\"target\"] + max(-step, min(step, wanted - door[\"target\"]))
+                door[\"target\"] = target
+                UsdPhysics.DriveAPI(door[\"joint\"], \"angular\").GetTargetPositionAttr().Set(target)
+
+    def on_update(self, current_time: float, delta_time: float):
+        \"\"\"Advance proximity detection and hinge targets using simulation time [s].\"\"\"
+        from pxr import Usd, UsdGeom
+
+        if not self._running or delta_time <= 0:
+            return
+        self._elapsed += delta_time
+        self._scan_elapsed += delta_time
+        if self._scan_elapsed >= 0.5:
+            self._scan_actors()
+        cache = UsdGeom.XformCache(Usd.TimeCode(self.timeline.get_current_time() * self.stage.GetTimeCodesPerSecond()))
+        scene_inv = cache.GetLocalToWorldTransform(self.prim.GetParent()).GetInverse()
+        hold = float(self._value(self.prim, \"closeDelay\", 0.35))
+        trigger = DoorTrigger(
+            approach_distance_m=float(self._value(self.prim, \"approachDistance\", 0.75)),
+            doorway_depth_m=float(self._value(self.prim, \"doorwayDepth\", 0.05)),
+        )
+        for actor in self._actors:
+            pos = self._position(actor, cache)
+            if pos is None or not all(isfinite(v) for v in pos):
+                continue
+            pos = scene_inv.Transform(pos)
+            key = str(actor[\"prim\"].GetPath())
+            old = self._previous.get(key)
+            vy = (pos[1] - old[1][1]) / max(self._elapsed - old[0], 1e-6) if old else 0.0
+            self._previous[key] = (self._elapsed, pos)
+            radius = float(self._value(actor[\"prim\"], \"radius\", 0.28))
+            for door in self._doors:
+                center = door[\"center\"]
+                if trigger.requests_open(tuple(pos - center), vy, radius):
+                    door[\"until\"] = self._elapsed + hold
+        # Door leaves are visual-only in this scenario. Collision opinions belong
+        # to the static override layer; never re-enable them on timeout or stop.
+        if self._value(self.prim, \"enabled\", True):
+            self._write_targets(delta_time)
+
+
+def setup(db):
+    \"\"\"Create an independent controller for this graph instance.\"\"\"
+    import omni.usd
+    from pxr import Sdf
+
+    stage = omni.usd.get_context().get_stage()
+    control_path = Sdf.Path(db.node.get_prim_path()).GetParentPath().GetParentPath()
+    db.per_instance_state.controller = AutomaticDoors(stage.GetPrimAtPath(control_path))
+
+
+def compute(db):
+    \"\"\"Advance the controller only while the simulation timeline is playing.\"\"\"
+    controller = db.per_instance_state.controller
+    if controller.timeline.is_playing():
+        if not controller._running:
+            controller.on_play()
+        controller.on_update(controller.timeline.get_current_time(), db.inputs.delta_time)
+    return True
+
+
+def cleanup(db):
+    \"\"\"Release the controller when the Script Node is replaced or destroyed.\"\"\"
+    controller = getattr(db.per_instance_state, \"controller\", None)
+    if controller is not None:
+        controller.on_destroy()
+        db.per_instance_state.controller = None
+"""
+                custom bool inputs:usePath = 0
+            }
+        }
+    }
+
+    over "Meshes"
+    {
+        over "Assets"
+        {
+            over "Door_YS2HVXZVALGD2PTUJQ888888_7qcYe"
+            {
+                over "Geom"
+                {
+                    over "Door"
+                    {
+                        custom float physxRigidBody:maxAngularVelocity = 180
+
+                        over "HandleContact0"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "HandleContact1"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "CollisionMesh"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+                    }
+
+                    over "Door_Frame"
+                    {
+                        over "FrameContact0"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact1"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03499998997183563, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.1874999949114124, 2.2204459996194763e-18, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact2"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact3"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (1.25, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 0.2029999941587448, 0), (0, 0, 2.4005, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact4"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.38499996045168294, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.2960000038146973, 0), (-0.3974999830919379, 0, 1.151, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+                    }
+                }
+            }
+
+            over "Door_YS3UEUZVAJ2V4PTUKU888888_mdynP"
+            {
+                over "Geom"
+                {
+                    over "Door"
+                    {
+                        custom float physxRigidBody:maxAngularVelocity = 180
+
+                        over "HandleContact0"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "HandleContact1"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "CollisionMesh"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+                    }
+
+                    over "DoorFrame"
+                    {
+                        over "FrameContact0"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact1"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03499998997183563, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.1874999949114124, 2.2204459996194763e-18, 1.2510000000000001, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact2"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact3"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (1.25, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 0.2029999941587448, 0), (0, 0, 2.4005, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact4"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.38499996045168294, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.2960000038146973, 0), (-0.39749998309193746, 0, 1.151, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    over "Cubicles"
+    {
+        over "Cubicle01"
+        {
+            over "Door"
+            {
+                over "Geom"
+                {
+                    over "Door"
+                    {
+                        custom float physxRigidBody:maxAngularVelocity = 180
+
+                        over "HandleContact0"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "HandleContact1"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "CollisionMesh"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+                    }
+
+                    over "Door_Frame"
+                    {
+                        over "FrameContact0"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact1"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03499998997183563, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.5020000934600826, 0), (-0.187499994911412, 6.661337998858429e-18, 1.2510000000000001, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact2"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact3"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (1.25, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 0.2029999941587448, 0), (0, 0, 2.4005, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact4"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.3849999604516844, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.2960000038146973, 0), (-0.3974999830919378, 0, 1.151, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+                    }
+                }
+            }
+        }
+
+        over "Cubicle02"
+        {
+            over "Door"
+            {
+                over "Geom"
+                {
+                    over "Door"
+                    {
+                        custom float physxRigidBody:maxAngularVelocity = 180
+
+                        over "HandleContact0"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "HandleContact1"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+
+                        over "CollisionMesh"
+                        {
+                            custom bool physics:collisionEnabled = 0
+                        }
+                    }
+
+                    over "Door_Frame"
+                    {
+                        over "FrameContact0"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact1"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03499998997183526, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.18749999491141178, -4.440891999238953e-18, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact2"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.03500000014901161, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.502000093460083, 0), (-0.6074999999999999, 0, 1.251, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact3"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (1.25, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 0.2029999941587448, 0), (0, 0, 2.4005, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+
+                        over "FrameContact4"
+                        {
+                            custom bool physics:collisionEnabled = 1
+                            custom float physxCollision:contactOffset = 0.01
+                            custom float physxCollision:restOffset = 0
+                            custom matrix4d xformOp:transform = ( (0.3849999604516832, 0, 0, 0), (0, 0.06, 0, 0), (0, 0, 2.2960000038146973, 0), (-0.39749998309193735, 0, 1.151, 1) )
+                            custom token[] xformOpOrder = ["xformOp:transform"]
+                        }
+                    }
+                }
+            }
+        }
+
+        over "Partitions"
+        {
+            over "West"
+            {
+                over "PhysicsBox"
+                {
+                    custom bool physics:collisionEnabled = 1
+                    custom float physxCollision:contactOffset = 0.01
+                    custom float physxCollision:restOffset = 0
+                    custom matrix4d xformOp:transform = ( (1.0909090968202952, 0, 0, 0), (0, 1.7349377822871201, 0, 0), (0, 0, 0.9999999999999999, 0), (7.105427357601002e-15, -0.36746889114356, -5.551115123125783e-17, 1) )
+                    custom token[] xformOpOrder = ["xformOp:transform"]
+                }
+            }
+
+            over "Shared"
+            {
+                over "PhysicsBox"
+                {
+                    custom bool physics:collisionEnabled = 1
+                    custom float physxCollision:contactOffset = 0.01
+                    custom float physxCollision:restOffset = 0
+                    custom matrix4d xformOp:transform = ( (1.0909090968202941, 0, 0, 0), (0, 1.2261347029087195, 0, 0), (0, 0, 1, 0), (-2.1818181936405887, -0.11306735145435975, 0, 1) )
+                    custom token[] xformOpOrder = ["xformOp:transform"]
+                }
+            }
+        }
+    }
+
+    def "ThirdDoorNavigation"
+    {
+        def NavMeshVolume "Obstacle_00"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Geom/Door_Frame/FrameContact0>
+            custom matrix4d xformOp:transform = ( (0.5750000001490121, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (4.2604999999999995, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_01"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Geom/Door_Frame/FrameContact1>
+            custom matrix4d xformOp:transform = ( (0.5749999899718361, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (3.4655000050885874, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_02"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Geom/Door_Frame/FrameContact2>
+            custom matrix4d xformOp:transform = ( (0.5750000001490116, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (3.0454999999999997, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_04"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS2HVXZVALGD2PTUJQ888888_7qcYe/Geom/Door_Frame/FrameContact4>
+            custom matrix4d xformOp:transform = ( (0.9249999604516832, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.65, 0), (3.2555000169080617, -0.05199999999999998, 1.175, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_05"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Geom/DoorFrame/FrameContact0>
+            custom matrix4d xformOp:transform = ( (0.5750000001490116, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (2.9425, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_06"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Geom/DoorFrame/FrameContact1>
+            custom matrix4d xformOp:transform = ( (0.5749999899718361, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (2.147500005088587, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_07"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Geom/DoorFrame/FrameContact2>
+            custom matrix4d xformOp:transform = ( (0.5750000001490119, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (1.7274999999999996, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_09"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Meshes/Assets/Door_YS3UEUZVAJ2V4PTUKU888888_mdynP/Geom/DoorFrame/FrameContact4>
+            custom matrix4d xformOp:transform = ( (0.924999960451683, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.65, 0), (1.9375000169080616, -0.05199999999999998, 1.175, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_10"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle01/Door/Geom/Door_Frame/FrameContact0>
+            custom matrix4d xformOp:transform = ( (0.5750000001490119, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (0.3074999999999999, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_11"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle01/Door/Geom/Door_Frame/FrameContact1>
+            custom matrix4d xformOp:transform = ( (0.5749999899718359, 0, 0, 0), (0, 0.6000000000000001, 0, 0), (0, 0, 2.6640000467300413, 0), (-0.48749999491141205, -0.05199999999999996, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_12"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle01/Door/Geom/Door_Frame/FrameContact2>
+            custom matrix4d xformOp:transform = ( (0.575000000149012, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.6640000467300413, 0), (-0.9075, -0.05199999999999998, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_14"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle01/Door/Geom/Door_Frame/FrameContact4>
+            custom matrix4d xformOp:transform = ( (0.9249999604516846, 0, 0, 0), (0, 0.6, 0, 0), (0, 0, 2.65, 0), (-0.697499983091938, -0.05199999999999998, 1.175, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_15"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle02/Door/Geom/Door_Frame/FrameContact0>
+            custom matrix4d xformOp:transform = ( (0.5750000001490116, 0, 0, 0), (0, 0.6000000000000001, 0, 0), (0, 0, 2.6640000467300413, 0), (1.6425000000000005, -0.05200000000000002, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_16"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle02/Door/Geom/Door_Frame/FrameContact1>
+            custom matrix4d xformOp:transform = ( (0.5749999899718352, 0, 0, 0), (0, 0.6000000000000001, 0, 0), (0, 0, 2.6640000467300413, 0), (0.8475000050885888, -0.05200000000000002, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_17"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle02/Door/Geom/Door_Frame/FrameContact2>
+            custom matrix4d xformOp:transform = ( (0.5750000001490116, 0, 0, 0), (0, 0.6000000000000001, 0, 0), (0, 0, 2.6640000467300413, 0), (0.42750000000000066, -0.05200000000000002, 1.1820000233650207, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_19"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Cubicle02/Door/Geom/Door_Frame/FrameContact4>
+            custom matrix4d xformOp:transform = ( (0.9249999604516831, 0, 0, 0), (0, 0.6000000000000001, 0, 0), (0, 0, 2.65, 0), (0.6375000169080631, -0.05200000000000002, 1.175, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_20"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Partitions/West/PhysicsBox>
+            custom matrix4d xformOp:transform = ( (0.6000000000000001, 0, 0, 0), (0, 3.225250056669113, 0, 0), (0, 0, 2.9499999761581415, 0), (-0.9674999999999996, -1.3398749935850485, 1.3249999880790708, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+
+        def NavMeshVolume "Obstacle_21"
+        {
+            custom float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+            custom token nav:volume:type = "Exclude"
+            custom rel third:collider = </World/Cubicles/Partitions/Shared/PhysicsBox>
+            custom matrix4d xformOp:transform = ( (0.5999999999999999, 0, 0, 0), (0, 2.4377500600218776, 0, 0), (0, 0, 2.949999976158142, 0), (0.36750000000000005, -0.9461249952614308, 1.324999988079071, 1) )
+            custom token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]
+        }
+    }
+}
+

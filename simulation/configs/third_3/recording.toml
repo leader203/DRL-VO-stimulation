@@ -1,0 +1,23 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Reuse the user's population, routes, timing, dimensions and ROS settings.
+scenario = "simulation.yaml"
+
+[simulation]
+headless = true
+start_paused = false
+console = false
+render_viewport = true
+report_path = "output/recording_status.json"
+
+[recording]
+enabled = true
+output_path = "output/recording.mp4"
+fps = 12
+warmup_s = 0.0
+camera_view = "overhead"
+# Fit the scene map, routes and full actor height from above.
+# Use a fresh output_path on subsequent runs; existing recordings are preserved.

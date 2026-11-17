@@ -1,0 +1,7 @@
+Moved goal queues farther from recently cleared exclusive portals when a bounded
+forward staging segment preserved the occupant's exit. Reduced the shared ROS
+pedestrian target gap from 0.25 m to 0.225 m while retaining the physical capsule
+and scene obstacle clearances.
+
+Refreshed cached intermediate corner guidance after detecting substantial
+point braking, accepting only swept-clear outgoing previews with a smaller turn.

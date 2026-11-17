@@ -1,0 +1,24 @@
+Pedestrian avoidance heading
+----------------------------
+
+* Prevented social preferences from reversing the next certified route segment
+  and selected executable ORCA candidates within its forward half-plane and the
+  existing turn-rate limit. Used route-driving preferences for backward-solution
+  recovery and revalidated stale turning targets after guidance changes.
+* Refined float-scale contact tangents through the same ORCA, heading and exact
+  swept-step certificates before falling back to ray scaling. Kept the configured
+  minimum pair clearance and stationary bodies unchanged.
+* Discarded passed cached path vertices before selecting normal, goal-admission
+  or passing guidance and committed certified visible shortcuts, retaining fresh
+  replanning when forward guidance was blocked.
+* Preferred certified refuges in the visible route's forward half-plane with
+  smaller body turns, retaining bounded backward refuges as a constrained-space
+  fallback. Checked actual passage feasibility before releasing a yielding actor.
+  Failed readiness checks kept their original retreat deadline and retried unchanged
+  endpoint geometry at bounded intervals.
+* Enforced heading limits for every nonzero C bridge candidate and exact zero
+  velocity at a zero speed cap. Explicit prebuilt libraries must be rebuilt to
+  receive these checks; automatic source-addressed builds refresh themselves.
+* Preserved user waypoints, waits, arrival headings, timing, coordinate transforms,
+  physical spacing and bounded safety recovery. Original-route returns and necessary
+  door/refuge movements remained explicit navigation actions.

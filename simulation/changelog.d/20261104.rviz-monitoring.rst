@@ -1,0 +1,14 @@
+Added read-only RViz monitoring for ROS pedestrian sessions
+--------------------------------------------------------
+
+* Published latched observed body, goal, dynamic-footprint and door-state markers
+  in the existing map frame at a simulation-time rate of 10 Hz.
+* Distinguished planned routes and current requested guide points from observed
+  poses, and displayed optional declared doorway and safety-sweep reference lines.
+* Generated session-bound RViz configuration and monitor metadata in runtime outputs.
+* Kept the default view unobstructed with one dock and a full-map top-down scale,
+  and published a unique read-only map-to-canonical-world reference TF without
+  changing motion coordinate conversion or the user's global RViz configuration.
+* Added ``run.py monitor RUN_DIR_OR_STATUS`` and ``--dry-run`` without starting
+  Isaac Sim or another navigation controller. Existing scenario configuration
+  remained valid; a new run is required to publish monitoring data for older outputs.

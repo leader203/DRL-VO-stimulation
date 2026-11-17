@@ -1,0 +1,16 @@
+Project configuration and documentation maintenance
+-------------------------------------------------
+
+* Separated the shipped ROS project inputs from inactive IRA settings. Explicit
+  ``configs/<project>/ira.toml`` profiles retained each project's original native
+  body and Kit settings. Use these profiles when running IRA instead of changing
+  only the ROS scenario's backend field.
+* Replaced dated, already occupied recording destinations with reusable profile
+  names and documented fresh-directory workflows for repeated recordings.
+* Updated backend-specific CLI help, coordinate conventions, configuration sources
+  and documentation navigation. Internal recording imports used the current package
+  path while existing external compatibility aliases remained available.
+* Omitted inactive ROS navigation settings from IRA configuration previews without
+  changing the selected backend or its execution settings.
+* Preserved original pedestrian plans, timing, arrival tolerances and control
+  frequencies during the configuration cleanup.

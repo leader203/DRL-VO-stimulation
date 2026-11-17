@@ -1,0 +1,3 @@
+Maintained an independent third_3 project for simulation/assets/THIRD_EXP_1.usd,
+with explicit native IRA pedestrians, local pedestrian settings and fine NavMesh
+sampling. Preserved user-authored route coordinates and schedule parameters.

@@ -1,0 +1,10 @@
+Fixed ROS obstacle ownership so composed robots used the same static/live collision
+classification as other objects, and explicitly dynamic subtrees sampled their
+nearest enabled rigid body. Rejected changes to the baked map's static collider
+membership; restart the session to rebuild the map after such changes, and declare
+script-driven moving subtrees in ``dynamic_roots`` before startup.
+
+Preserved known door sweep height bounds so unrelated floor levels did not block
+each other. Rejected external actor-root basis changes and vertical pose commands
+before applying a complete batch. Cleaned the workflow's owned process group on
+normal and nonzero child exits as well as cancellation and timeout.

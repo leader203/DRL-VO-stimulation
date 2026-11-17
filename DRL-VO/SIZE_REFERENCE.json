@@ -1,0 +1,25 @@
+{
+  "robot_asset": "project/resources/releases/pedestrians_20261010/robot/EVT-EXP.usd",
+  "robot_static_asset_bounds_relative_base_link": {
+    "min_xyz": [
+      -0.2841055691242218,
+      -0.2236090749502182,
+      -0.00931330264252279
+    ],
+    "max_xyz": [
+      0.45759827333915726,
+      0.223440021276474,
+      1.7452068125447013
+    ]
+  },
+  "robot_length_width_m": [
+    0.7417038424633791,
+    0.4470490962266922
+  ],
+  "human_asset": "social_navigation_runtime_20261010/project/src/protomotions/data/assets/mjcf/smpl_humanoid.xml",
+  "human_shoulder_center_xy_distance_m": 0.3476317735765819,
+  "human_upper_arm_capsule_radius_m": 0.0517,
+  "human_circle_diameter_m": 0.4510317735765819,
+  "human_circle_definition": "shoulder-center span plus capsule radii; approximate upright body width, not a full dynamic collision envelope",
+  "same_metric_scale_for_map_robot_humans": true
+}

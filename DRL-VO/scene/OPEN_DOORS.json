@@ -1,0 +1,163 @@
+{
+  "doors": {
+    "mode": "all fixed open in session; physical colliders follow leaf",
+    "count": 15,
+    "leaves": [
+      {
+        "path": "/NewMetro/Environment/Male/Cubicle_01_INFERREDCOUNT/Motion/Leaf_64c6dc",
+        "joint": "/NewMetro/Mechanisms/Male/Cubicle_01_INFERREDCOUNT/Leaf_64c6dc_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Male/Cubicle_02_INFERREDCOUNT/Motion/Leaf_9bd559",
+        "joint": "/NewMetro/Mechanisms/Male/Cubicle_02_INFERREDCOUNT/Leaf_9bd559_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Male/Cubicle_03_INFERREDCOUNT/Motion/Leaf_6f82b3",
+        "joint": "/NewMetro/Mechanisms/Male/Cubicle_03_INFERREDCOUNT/Leaf_6f82b3_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Male/Cubicle_04_INFERREDCOUNT/Motion/Leaf_30904c",
+        "joint": "/NewMetro/Mechanisms/Male/Cubicle_04_INFERREDCOUNT/Leaf_30904c_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Male/Cubicle_05_INFERREDCOUNT/Motion/Leaf_b0b1f4",
+        "joint": "/NewMetro/Mechanisms/Male/Cubicle_05_INFERREDCOUNT/Leaf_b0b1f4_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Male/Janitor_door/Motion/Leaf_f863a7",
+        "joint": "/NewMetro/Mechanisms/Male/Janitor_door/Leaf_f863a7_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 4
+      },
+      {
+        "path": "/NewMetro/Environment/Accessible/Accessible_toilet_INFERRED/Motion/Leaf_259c30",
+        "joint": "/NewMetro/Mechanisms/Accessible/Accessible_toilet_INFERRED/Leaf_259c30_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 13
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_02/Motion/Leaf_0d878e",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_02/Leaf_0d878e_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_03/Motion/Leaf_234547",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_03/Leaf_234547_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_05/Motion/Leaf_71c552",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_05/Leaf_71c552_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_00/Motion/Leaf_4a8d18",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_00/Leaf_4a8d18_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_06/Motion/Leaf_ea3d19",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_06/Leaf_ea3d19_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_01/Motion/Leaf_569e32",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_01/Leaf_569e32_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_07/Motion/Leaf_6694ed",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_07/Leaf_6694ed_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      },
+      {
+        "path": "/NewMetro/Environment/Female/Female_cubicle_04/Motion/Leaf_17815e",
+        "joint": "/NewMetro/Mechanisms/Female/Female_cubicle_04/Leaf_17815e_joint",
+        "angle_deg": -90.0,
+        "rigid_body_enabled": false,
+        "joint_enabled": false,
+        "colliders": 7
+      }
+    ],
+    "source_layers_saved": false
+  },
+  "map": {
+    "status": "CURRENT_PHYSX_STATIC_DOOR_GRID_QUERIED",
+    "known_cells_queried": 16398,
+    "unknown_cells_promoted": 0,
+    "changed_cells": 358,
+    "blocked_to_free_cells": 189,
+    "free_to_blocked_cells": 169,
+    "all_patrol_points_walkable": true,
+    "all_patrol_segments_reachable": true,
+    "floor_support_tested_for_every_current_free_cell": true,
+    "door_leaf_cell_hit_counts": {
+      "/NewMetro/Environment/Male/Cubicle_01_INFERREDCOUNT/Motion/Leaf_64c6dc": 24,
+      "/NewMetro/Environment/Male/Cubicle_02_INFERREDCOUNT/Motion/Leaf_9bd559": 18,
+      "/NewMetro/Environment/Male/Cubicle_03_INFERREDCOUNT/Motion/Leaf_6f82b3": 18,
+      "/NewMetro/Environment/Male/Cubicle_04_INFERREDCOUNT/Motion/Leaf_30904c": 24,
+      "/NewMetro/Environment/Male/Cubicle_05_INFERREDCOUNT/Motion/Leaf_b0b1f4": 19,
+      "/NewMetro/Environment/Female/Female_cubicle_00/Motion/Leaf_4a8d18": 24,
+      "/NewMetro/Environment/Female/Female_cubicle_01/Motion/Leaf_569e32": 18,
+      "/NewMetro/Environment/Female/Female_cubicle_02/Motion/Leaf_0d878e": 18,
+      "/NewMetro/Environment/Female/Female_cubicle_03/Motion/Leaf_234547": 24,
+      "/NewMetro/Environment/Female/Female_cubicle_04/Motion/Leaf_17815e": 19,
+      "/NewMetro/Environment/Female/Female_cubicle_05/Motion/Leaf_71c552": 24,
+      "/NewMetro/Environment/Female/Female_cubicle_06/Motion/Leaf_ea3d19": 18,
+      "/NewMetro/Environment/Female/Female_cubicle_07/Motion/Leaf_6694ed": 18,
+      "/NewMetro/Environment/Male/Janitor_door/Motion/Leaf_f863a7": 8,
+      "/NewMetro/Environment/Male/Janitor_door/Motion/Leaf_f863a7/CollisionDetails/Handle_segment_0": 3,
+      "/NewMetro/Environment/Male/Janitor_door/Motion/Leaf_f863a7/CollisionDetails/Handle_segment_2": 3,
+      "/NewMetro/Environment/Male/Janitor_door/Motion/Leaf_f863a7/CollisionDetails/Handle_segment_1": 1,
+      "/NewMetro/Environment/Accessible/Accessible_toilet_INFERRED/Motion/Leaf_259c30": 48
+    },
+    "artifact": "/home/user/workspace/social_navigation_runtime_20261010/evidence/newmetro_robot_preview_updated_map_20261016_0100/open_doors_native_grid.npz",
+    "sha256": "9bc1bd78a145542f8b07ec87a5edbc833d6ccef8ba2328cc3455c48e5bc14234",
+    "scope": "Owned current-pose preview grid; baseline native-map certificate remains historical"
+  }
+}
