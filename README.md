@@ -6,6 +6,7 @@
 |---|---|
 | `simulation/` | ROS 2 行人仿真（SFM/ORCA、占据栅格、自动门）与冻结 DRL-VO 推理接入；包含 `third_3` 四人场景、评估配置和启动脚本 |
 | `DRL-VO/` | NewMetro 四行人 480k 步冻结模型包、配套推理/观测代码、原始参考网络和 `reference/python` 运行依赖 |
+| `USD-assets/` | 额外场景/机器人 USD 与贴图（Git LFS，约 730 MB） |
 
 ## 模型
 
@@ -19,7 +20,16 @@
 - `__pycache__/`、`.pytest_cache/`、`*.pyc`
 - `simulation/.package_root/`：本机 import 软链，启动脚本会在首次运行时自动重建
 
-仓库仍包含约 11 MB 模型和约 64 MB USD 场景/机器人资产。
+仓库仍包含约 11 MB 模型、约 64 MB 仿真 USD，以及 `USD-assets/` 下约 730 MB 场景资产（Git LFS）。
+
+## USD 资产
+
+`USD-assets/` 使用 Git LFS。克隆后执行：
+
+```bash
+git lfs install
+git lfs pull
+```
 
 ## 运行
 

@@ -1,0 +1,2 @@
+USD-assets/** filter=lfs diff=lfs merge=lfs -text
+USD-assets/README.md -filter -diff -merge text
