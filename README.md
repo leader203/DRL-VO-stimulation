@@ -7,6 +7,7 @@
 | `simulation/` | ROS 2 行人仿真（SFM/ORCA、占据栅格、自动门）与冻结 DRL-VO 推理接入；包含 `third_3` 四人场景、评估配置和启动脚本 |
 | `DRL-VO/` | NewMetro 四行人 480k 步冻结模型包、配套推理/观测代码、原始参考网络和 `reference/python` 运行依赖 |
 | `USD-assets/` | 额外场景/机器人 USD 与贴图（Git LFS，约 730 MB） |
+| `Character-assets/` | `characters.yaml` 所需的 21 个行人角色、MotionLibrary 和 Animations（Git LFS，约 1.2 GB） |
 
 ## 模型
 
@@ -24,12 +25,14 @@
 
 ## USD 资产
 
-`USD-assets/` 使用 Git LFS。克隆后执行：
+`USD-assets/` 和 `Character-assets/` 使用 Git LFS。克隆后执行：
 
 ```bash
 git lfs install
 git lfs pull
 ```
+
+角色资产的 `asset_root` 指向 `Character-assets/`（该层包含 `Isaac/People/...`）。
 
 ## 运行
 
