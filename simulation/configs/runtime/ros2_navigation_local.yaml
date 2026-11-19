@@ -24,7 +24,7 @@ auto_return_heading: follow_route
 obstacle_time_horizon_s: 0.5
 # Query more distant oncoming pedestrians for early steering [m].
 neighbor_distance_m: 4.8
-asset_root: /home/stardust/isaacsim/assets/6.1_people
+asset_root: /workspace/wujunlin/DRL-VO-stimulation/Character-assets
 ros_setup_path: /tmp/pedstrain_ros_env.sh
 ros_namespace: /pedestrian_sim
 ros_domain_id: 37

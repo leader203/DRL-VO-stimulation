@@ -116,17 +116,22 @@ def _geometry(
     count = bridge.config.max_pedestrians
     if isinstance(count, bool) or not isinstance(count, int) or count < 0:
         raise ValueError("max_pedestrians must be a nonnegative integer")
+    # The ROS runtime drove a single world; the cloned-room task publishes one row
+    # per robot, so the leading axis follows ``env.num_envs`` instead of a literal 1.
+    worlds = int(getattr(env, "num_envs", 1))
+    if worlds < 1:
+        raise ValueError("num_envs must be positive")
     state = bridge.state
-    positions = _floating_tensor(state.positions_w, "positions_w", (1, count, 3))
-    radii = _floating_tensor(state.radii, "radii", (1, count), positions)
+    positions = _floating_tensor(state.positions_w, "positions_w", (worlds, count, 3))
+    radii = _floating_tensor(state.radii, "radii", (worlds, count), positions)
     valid = state.valid
-    if not isinstance(valid, torch.Tensor) or valid.dtype != torch.bool or tuple(valid.shape) != (1, count):
-        raise ValueError("valid must be a bool tensor of shape [1, max_pedestrians]")
+    if not isinstance(valid, torch.Tensor) or valid.dtype != torch.bool or tuple(valid.shape) != (worlds, count):
+        raise ValueError(f"valid must be a bool tensor of shape [{worlds}, {count}]")
     valid = valid.to(device=positions.device)
     if bool(((radii < 0.0) | (valid & (radii == 0.0))).any()):
         raise ValueError("Pedestrian radii must be positive in valid slots and nonnegative elsewhere [m]")
     robot_data = env.scene[robot_name].data
-    robot_position = _floating_tensor(robot_data.root_pos_w, "root_pos_w", (1, 3), positions)
+    robot_position = _floating_tensor(robot_data.root_pos_w, "root_pos_w", (worlds, 3), positions)
     return state, positions, radii, valid, robot_data, robot_position
 
 

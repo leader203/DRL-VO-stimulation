@@ -2,3 +2,4 @@ USD-assets/** filter=lfs diff=lfs merge=lfs -text
 USD-assets/README.md -filter -diff -merge text
 Character-assets/** filter=lfs diff=lfs merge=lfs -text
 Character-assets/README.md -filter -diff -merge text
+simulation/rl/assets/*.usd filter=lfs diff=lfs merge=lfs -text

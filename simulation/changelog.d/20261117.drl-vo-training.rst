@@ -1,0 +1,8 @@
+Split the DRL-VO training devices so the PhysX simulation and the policy run on the
+GPU: ``--device`` now selects the GPU used by the simulation and the network, while
+the new ``--sim-device`` selects the device of the environment's torch buffers. The
+PhysX tensor API of Isaac Sim 4.5 returns host tensors — ``set_root_transforms``
+rejects a CUDA index tensor outright — so a GPU run keeps the buffers on the host by
+default instead of failing in the first reset with "expected all tensors to be on the
+same device". The reset event and the wheel action term now write and read on the
+buffer's own device rather than on the policy device.

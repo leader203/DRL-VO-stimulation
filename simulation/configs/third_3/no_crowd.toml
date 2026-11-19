@@ -1,0 +1,20 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# 与 simulation.yaml 同场景、同机器人，但关闭行人：用于在没有 ROS 2 与角色资产
+# 的机器上冒烟检查 DRL-VO 训练链路（环境、观测、奖励、终止、PPO）。
+# 场景、机器人和导航栅格保持不变，因此奖励与观测仍按部署控制器的地图计算。
+scenario = "simulation.yaml"
+
+[pedestrians]
+enabled = false
+
+[simulation]
+headless = true
+render_viewport = false
+report_path = "output/no_crowd_status.json"
+
+[recording]
+enabled = false

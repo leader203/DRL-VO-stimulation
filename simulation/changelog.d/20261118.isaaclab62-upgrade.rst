@@ -1,0 +1,21 @@
+Move the DRL-VO training onto the Isaac Sim 6.2 / Isaac Lab 3.0 stack that the
+project's own ``ros2_app.kit`` targets. A separate ``isaaclab62`` environment (Python
+3.12, Isaac Sim 6.2.0.0, Isaac Lab 3.0.0) leaves the existing Isaac Sim 4.5
+environment untouched, and ``train_drl_vo.py`` now spans both: the 3.0 split of
+``default_root_state`` into ``default_root_pose``/``default_root_vel``, the
+``physics`` preset replacing ``PhysxCfg``, ``ProxyArray`` buffers, an ``env_ids``
+selection that arrives as a ``slice``, and event terms whose parameters the manager
+fills from the callable's signature.
+
+Two behaviours are worth calling out. The robot is now reset to the pose the composed
+stage authored for it, captured by a ``capture_spawn_state`` startup event: Isaac Lab
+derives ``default_root_pose`` from ``init_state``, which is the identity here because
+the task spawns nothing, so resetting to it teleported the robot into the wall at the
+world origin and every episode died after three collisions. And ``--sim-device cpu``
+is required for a GPU run, because Isaac Sim 6.2's PhysX tensor API still serves host
+buffers with the Direct-GPU settings and fabric interop enabled, while Isaac Lab 3.0
+launches its pose kernels on the articulation device.
+
+``simulation/tools/patch_isaaclab_physx.py`` records and applies the one library
+defect in the way: ``ArticulationData.update`` refreshes ``joint_acc`` through a warp
+kernel that faults with CUDA error 700 on 6.2, and the task never reads it.

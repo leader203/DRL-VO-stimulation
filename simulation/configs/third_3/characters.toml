@@ -1,0 +1,19 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# 与 simulation.yaml 同场景、同机器人、同 4 个行人路点，但 asset_root 指向本仓库
+# 内置的 Character-assets/（Isaac Sim 6.1 People 角色），无需外部 /project 安装。
+scenario = "simulation.yaml"
+
+[navigation]
+settings_path = "../runtime/ros2_navigation_local.yaml"
+
+[simulation]
+headless = true
+render_viewport = false
+report_path = "output/characters_status.json"
+
+[recording]
+enabled = false

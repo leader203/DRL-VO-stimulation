@@ -10,7 +10,10 @@ from __future__ import annotations
 from dataclasses import fields, replace
 from pathlib import Path
 
-import tomllib
+try:  # Python >= 3.11
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10 (Isaac Sim 4.5 runtime)
+    import tomli as tomllib
 
 from .models import PedestrianConfig, RobotConfig, SceneConfig, SimulationConfig, SimulationSettings
 from .navigation import NavigationConfig

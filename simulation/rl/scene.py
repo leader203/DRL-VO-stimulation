@@ -48,6 +48,21 @@ if TYPE_CHECKING:
 _BOUND_SCENE: ContextVar[Ros2TrainingScene | None] = ContextVar("ros2_training_scene", default=None)
 
 
+def _navigation_settings(path: Path | None, *, required: bool) -> Ros2NavigationSettings:
+    """Load the configured ROS settings, tolerating a missing file without a crowd.
+
+    A pedestrian-free smoke stage still ray-casts its rewards against the map the
+    deployed controller would build, so the configured resolution and clearances
+    are kept; only a missing settings file falls back to the dataclass defaults.
+    """
+    try:
+        return load_ros2_navigation_settings(path)
+    except (OSError, ValueError):
+        if required:
+            raise
+        return Ros2NavigationSettings()
+
+
 def _bound_training_scene(stage: Usd.Stage) -> Ros2TrainingScene:
     prepared = _BOUND_SCENE.get()
     if prepared is None or prepared.stage != stage:
@@ -80,15 +95,12 @@ class Ros2TrainingScene:
         if type(capacity) is not int or capacity < minimum:
             raise ValueError("max_pedestrians must cover the selected population and be at least one.")
         self.max_pedestrians = capacity
-        self.navigation = (
-            load_ros2_navigation_settings(config.navigation.settings_path)
-            if population is not None
-            else Ros2NavigationSettings()
-        )
+        self.navigation = _navigation_settings(config.navigation.settings_path, required=population is not None)
         self._output = output.resolve() if output is not None else None
         self._temporary: Path | None = None
         self._world_path: Path | None = None
         self._stage: Usd.Stage | None = None
+        self._occupancy: OccupancyGrid | None = None
         self._actors: Ros2Actors | None = None
         self._bridge: Ros2PedestrianBridge | None = None
         self._bridge_attempted = False
@@ -110,11 +122,42 @@ class Ros2TrainingScene:
             error.add_note(f"ROS training scene cleanup failed: {cleanup!r}")
 
     @property
+    def has_crowd(self) -> bool:
+        """Whether this scene authored ROS pedestrian bodies on the stage."""
+        return self._actors is not None
+
+    @property
     def stage(self) -> Usd.Stage:
         """Prepared USD stage to pass to Isaac Lab's ``use_stage`` context."""
         if self._stage is None:
             raise RuntimeError("Complete ROS training scene setup before requesting its stage.")
         return self._stage
+
+    @property
+    def frame(self) -> StageFrame:
+        """Canonical world to ROS map conversion of the prepared stage."""
+        self.stage
+        return self._frame
+
+    def occupancy(self) -> OccupancyGrid:
+        """Return the raster the bridge planned on, building it when no crowd is configured.
+
+        The training reward ray-casts against the same static map the deployed
+        controller uses, so a pedestrian-free smoke run still sees the geometry.
+        """
+        self.stage
+        if self._occupancy is None:
+            settings = self.navigation.to_dict()
+            settings.update(seed=self.config.settings.seed, plans=[plan.to_dict() for plan in self._plans])
+            roots = (self._actors.root_path,) if self._actors is not None else ()
+            grid_data = build_occupancy_grid(self.stage, settings, self._frame, excluded_roots=roots)
+            self._occupancy = OccupancyGrid(
+                grid_data["occupancy"],
+                grid_data["resolution_m"],
+                grid_data["origin_xy_m"],
+                goal_projection_tolerance_m=self.navigation.goal_projection_tolerance_m,
+            )
+        return self._occupancy
 
     async def setup(self) -> None:
         """Open the scene and author fixed pedestrian bodies before physics starts."""
@@ -130,7 +173,10 @@ class Ros2TrainingScene:
             raise RuntimeError("Prepare the ROS stage before constructing Isaac Lab's SimulationContext.")
         self._world_path, _ = _compose_world(self.config, self._temporary)
         context = omni.usd.get_context()
-        opened, error = await context.open_stage_async(str(self._world_path))
+        # Open synchronously so the stage is live when this method returns; the
+        # awaited variant needs a coroutine runner that standalone Kit lacks.
+        opened = context.open_stage(str(self._world_path))
+        error = None
         stage = context.get_stage()
         if not opened or stage is None or stage.GetRootLayer().realPath != str(self._world_path):
             raise RuntimeError(f"Cannot open ROS training scene: {error or self._world_path}")
@@ -211,6 +257,7 @@ class Ros2TrainingScene:
                     grid_data["origin_xy_m"],
                     goal_projection_tolerance_m=self.navigation.goal_projection_tolerance_m,
                 )
+                self._occupancy = grid
                 kinematics = _TrainingPhysicsBodies(self.stage, self._actors)
                 obstacles = DynamicObstacleObserver(
                     self.stage,
@@ -310,3 +357,5 @@ class Ros2TrainingScene:
         shutil.rmtree(self._temporary)
         self._temporary = None
         self._stage = None
+        self._frame = None
+        self._occupancy = None
