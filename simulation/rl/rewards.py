@@ -57,19 +57,64 @@ from .observations import _floating_tensor, _geometry, _nonnegative_parameter, _
 
 # Source constants from DRLNavEnv._compute_reward, TRAINING_CONFIG.json "reward".
 R_ARRIVAL = 20.0
-R_WAYPOINT = 3.2
+# One metre of progress has to out-earn the per-step shaping, otherwise the
+# return-maximising policy is "stand still and face the goal" rather than
+# "drive to the goal". The source's 3.2 was too small for a 4.9 m median goal.
+R_WAYPOINT = 10.0
 R_COLLISION = -20.0
-R_SCAN_DISTANCE = -0.2
+R_SCAN_DISTANCE = -0.05
 R_ANGLE = 0.6
 R_ROTATION = -0.1
-GOAL_RADIUS_M = 0.3
+# --- washroom geometry (measured from third_room.usd) ---------------------
+# Floor 9.04 x 5.26 m. The aisle outside the four stalls is 4.0 m deep and
+# about 9 m long, the four stall doorways are 0.76 m wide and the pinch past
+# the sinks is 0.84 m. The robot is 0.742 x 0.447 m, so its half-width is
+# 0.224 m and its half-length 0.371 m. Every threshold below is set against
+# those numbers instead of the source's 0.30 m turtlebot.
+#
+# Contact at 0.28 m: 0.06 m outside the shell and 0.10 m clear of a 0.76 m
+# doorway when the robot is on the door centreline. The old 0.37 m was the
+# half-length, so a square-on approach to any doorway ended the episode.
+COLLISION_RADIUS_M = 0.28
+# The charge starts 0.47 m before contact, so there is a gradient to follow
+# long before the terminal cliff. 0.75 m also stays clear of the aisle
+# centreline (2.0 m of clearance) and of the 1.4 m sections (0.70 m).
+PROXIMITY_RING_M = 0.75
+# -0.5 per metre inside the ring: -0.235 at contact, i.e. about as much as
+# one second of full-speed progress. Big enough to steer off a wall, small
+# enough not to make a doorway crossing unaffordable.
+R_PROXIMITY_GAIN = -0.5
+# Turning in a 0.76 m doorway is the risky manoeuvre, not turning in general,
+# so the dead band tightens to 0.8 rad/s and the gain rises slightly.
+R_ROTATION_NARROW = -0.12
+ANGULAR_THRESHOLD_NARROW = 0.8
+# Deadlock: net displacement below 0.12 m for 3 s is a stop, not a slow
+# crawl. 3 s tolerates waiting for a walker to cross; 10 s escalates.
+DEADLOCK_WINDOW_M = 0.12
+DEADLOCK_STEPS = 60
+DEADLOCK_ESCALATE_STEPS = 200
+R_DEADLOCK = -0.3
+R_DEADLOCK_DEEP = -0.8
+GOAL_RADIUS_M = 0.2
 COLLISION_LOWER_M = 0.02
+# Legacy default only: when a caller passes neither proximity_ring_m nor
+# contact_radius_m the ring is this many body radii. The washroom task passes
+# an absolute 0.75 m ring instead, because the source's 3 radii (0.9 m) covered
+# most of a 47 m^2 room and charged the policy for driving anywhere.
+PROXIMITY_RADIUS_SCALE = 1.5
+# Pedestrians are priced from 0.5 m of footprint clearance inwards.
+PEDESTRIAN_PROXIMITY_M = 0.5
+MAX_SPEED_M_S = 0.9
 DISTANCE_HISTORY = 10
 MAX_ITERATIONS = 512
 ANGLE_THRESHOLD_RAD = math.pi / 6
 ANGULAR_SPEED_THRESHOLD_RAD_S = 1.0
 VO_SAMPLES = 60
-VO_PEDESTRIAN_RANGE_M = 7.0
+# The velocity-obstacle cone only looks one doorway-pair ahead: in a 4 m aisle
+# a 3.5 m horizon made almost every heading look blocked, which zeroed the
+# heading term and left the policy to react only after a person was on top of
+# it. 2.0 m is roughly the aisle depth.
+VO_PEDESTRIAN_RANGE_M = 2.0
 COLLISION_BUDGET = 3
 # The turtlebot body radius the source thresholds were tuned for [m].
 SOURCE_ROBOT_RADIUS_M = 0.3
@@ -88,6 +133,8 @@ class DrlVoEpisodeState:
 
     distances: torch.Tensor
     collisions: torch.Tensor
+    position_ring: torch.Tensor
+    stuck: torch.Tensor
 
 
 def episode_state(env: object) -> DrlVoEpisodeState:
@@ -108,6 +155,8 @@ def episode_state(env: object) -> DrlVoEpisodeState:
         state = DrlVoEpisodeState(
             distances=torch.zeros((count, DISTANCE_HISTORY), dtype=torch.float32, device=device),
             collisions=torch.zeros((count,), dtype=torch.long, device=device),
+            position_ring=torch.zeros((count, 0, 2), dtype=torch.float32, device=device),
+            stuck=torch.zeros((count,), dtype=torch.long, device=device),
         )
         env.drl_vo_reward_state = state
     return state
@@ -127,6 +176,8 @@ def reset_episode_state(env: object, env_ids: torch.Tensor | slice | None = None
     state = episode_state(env)
     selection = slice(None) if env_ids is None else env_ids
     state.distances[selection] = 0.0
+    state.position_ring[selection] = float("nan")
+    state.stuck[selection] = 0
 
 
 def iteration_index(env: object) -> torch.Tensor:
@@ -315,44 +366,169 @@ def goal_reward(
     return reward
 
 
+def deadlock_reward(
+    env: object,
+    robot_name: str = "robot",
+    window_m: float = DEADLOCK_WINDOW_M,
+    steps: int = DEADLOCK_STEPS,
+    escalate_steps: int = DEADLOCK_ESCALATE_STEPS,
+    r_deadlock: float = R_DEADLOCK,
+    r_deep: float = R_DEADLOCK_DEEP,
+) -> torch.Tensor:
+    """Charge a policy that stops making ground, shape ``[num_envs]``.
+
+    The four migrated terms are all state-based, so a robot parked in the
+    middle of the aisle scores what an arriving robot scores minus the arrival
+    bonus. The test is net displacement over the last ``steps`` policy steps,
+    not speed: a robot that circles in place covers ground but not *net*
+    ground, and none of the paper's terms notice. A 3 s window tolerates
+    waiting for a walker to cross.
+
+    Args:
+        env: Environment with the robot articulation.
+        robot_name: Scene key of the robot.
+        window_m: Net displacement over ``steps`` steps that counts as getting
+            somewhere [m].
+        steps: Length of the displacement window, and the number of stuck steps
+            before the cheap charge applies.
+        escalate_steps: Consecutive stuck steps before the deep charge.
+        r_deadlock: Non-positive charge per step once stuck.
+        r_deep: Non-positive charge per step once stuck for longer.
+
+    Returns:
+        Per-environment charge, zero while the robot is still moving.
+    """
+    window = _nonnegative_parameter(window_m, "window_m", positive=True)
+    if type(steps) is not int or steps < 1:
+        raise ValueError("steps must be a positive integer")
+    if type(escalate_steps) is not int or escalate_steps < steps:
+        raise ValueError("escalate_steps must be an integer no smaller than steps")
+    if r_deadlock > 0.0 or r_deep > 0.0:
+        raise ValueError("deadlock charges must be non-positive")
+    data = _robot_data(env, robot_name)
+    position = _floating_tensor(
+        getattr(data, "root_pos_w", None), "root_pos_w", (int(env.num_envs), 3)
+    )[:, :2]
+    state = episode_state(env)
+    count = int(env.num_envs)
+    if tuple(state.position_ring.shape) != (count, steps, 2) or state.position_ring.device != position.device:
+        state.position_ring = torch.full(
+            (count, steps, 2), float("nan"), dtype=position.dtype, device=position.device
+        )
+        state.stuck = torch.zeros((count,), dtype=torch.long, device=position.device)
+    primed = torch.isfinite(state.position_ring).reshape(count, -1).all(dim=1)
+    lengths = getattr(env, "episode_length_buf", None)
+    if isinstance(lengths, torch.Tensor):
+        index = (lengths.to(device=position.device, dtype=torch.long) - 1).clamp_min(0) % steps
+    else:
+        index = torch.zeros((count,), dtype=torch.long, device=position.device)
+    gather = index.view(-1, 1, 1).expand(-1, 1, 2)
+    previous = state.position_ring.gather(1, gather).squeeze(1)
+    previous = torch.where(primed.unsqueeze(1), previous, position)
+    net = torch.linalg.vector_norm(position - previous, dim=1)
+    moved = ~primed | (net > window)
+    state.stuck = torch.where(moved, torch.zeros_like(state.stuck), state.stuck + 1)
+    state.position_ring.scatter_(1, gather, position.unsqueeze(1))
+    stuck = state.stuck.to(dtype=torch.float32)
+    cheap = torch.full_like(stuck, float(r_deadlock))
+    deep = torch.full_like(stuck, float(r_deep))
+    return torch.where(
+        stuck >= float(escalate_steps), deep, torch.where(stuck >= float(steps), cheap, torch.zeros_like(stuck))
+    )
+
+
 def obstacle_reward(
     env: object,
+    robot_name: str = "robot",
     robot_radius_m: float = SOURCE_ROBOT_RADIUS_M,
     r_collision: float = R_COLLISION,
     r_scan: float = R_SCAN_DISTANCE,
     collision_lower_m: float = COLLISION_LOWER_M,
     sensor_name: str = "scan",
     max_range_m: float = 8.0,
+    proximity_radius_scale: float = PROXIMITY_RADIUS_SCALE,
+    pedestrian_proximity_m: float = PEDESTRIAN_PROXIMITY_M,
+    contact_radius_m: float | None = None,
+    proximity_ring_m: float | None = None,
 ) -> torch.Tensor:
-    """Penalize collisions and proximity from the front scan, shape ``[num_envs]``.
+    """Penalize collisions, static proximity and pedestrian proximity, shape ``[num_envs]``.
 
-    Mirrors ``DRLNavEnv._obstacle_collision_punish``: a return inside
-    ``[collision_lower_m, robot_radius_m]`` pays ``r_collision``, a return
-    inside ``3 * robot_radius_m`` pays ``r_scan`` per metre of missing
-    clearance, and anything farther is free. A return closer than
-    ``collision_lower_m`` falls into the proximity branch, exactly like the
-    source.
+    Mirrors ``DRLNavEnv._obstacle_collision_punish`` for the static side: a
+    return inside ``[collision_lower_m, robot_radius_m]`` pays ``r_collision``,
+    a return inside ``proximity_radius_scale * robot_radius_m`` pays ``r_scan``
+    per metre of missing clearance and anything farther is free.
+
+    Two things differ from the source, both deliberate:
+
+    * The proximity ring is a fixed ``proximity_ring_m`` (0.75 m in the
+      washroom) instead of a multiple of the body radius, and contact is judged
+      at ``contact_radius_m`` (0.28 m). In a room with 0.76 m stall doorways
+      no radius multiple both clears the doors and leaves the aisle free.
+    * Pedestrians are priced here as well. The source only scanned the static
+      map, so walking into a person ended the episode with no reward penalty.
+
+    The two branches are combined with a minimum rather than a sum so a single
+    contact is charged once.
 
     Args:
-        env: Environment exposing a front scan.
+        env: Environment exposing a front scan and optionally ``pedestrian_bridge``.
+        robot_name: Scene key of the robot, used for the crowd clearance.
         robot_radius_m: Robot body radius [m]; the source used the turtlebot's
             0.3 m, so pass the footprint radius of the migrated robot.
         r_collision: Collision constant.
-        r_scan: Proximity gain per metre.
+        r_scan: Proximity gain per metre of missing clearance.
         collision_lower_m: Smallest return still considered a collision [m].
         sensor_name: Scene key of the fallback ray caster.
         max_range_m: Finite no-return distance [m].
+        proximity_radius_scale: Proximity ring in body radii, must be >= 1.
+        pedestrian_proximity_m: Footprint clearance at which a pedestrian starts
+            to cost, in metres.
+        contact_radius_m: Scan range that counts as contact [m]; defaults to
+            ``robot_radius_m`` when omitted.
+        proximity_ring_m: Scan range where the proximity charge starts [m];
+            defaults to ``proximity_radius_scale * robot_radius_m``.
+
+    Returns:
+        The most negative of the static and pedestrian readings per environment.
     """
     radius = _nonnegative_parameter(robot_radius_m, "robot_radius_m")
     lower = _nonnegative_parameter(collision_lower_m, "collision_lower_m")
-    scan = minimum_scan(env, sensor_name, max_range_m)
-    contact = (scan >= lower) & (scan <= radius)
-    proximity = (scan < 3.0 * radius) & ~contact
-    return torch.where(
-        contact,
-        torch.full_like(scan, r_collision),
-        torch.where(proximity, r_scan * (3.0 * radius - scan), torch.zeros_like(scan)),
+    scale = _nonnegative_parameter(proximity_radius_scale, "proximity_radius_scale")
+    if scale < 1.0:
+        raise ValueError("proximity_radius_scale must be at least 1 so contact stays inside the ring")
+    ped_threshold = _nonnegative_parameter(pedestrian_proximity_m, "pedestrian_proximity_m")
+    touch_radius = radius if contact_radius_m is None else _nonnegative_parameter(
+        contact_radius_m, "contact_radius_m"
     )
+    ring = scale * radius if proximity_ring_m is None else _nonnegative_parameter(
+        proximity_ring_m, "proximity_ring_m"
+    )
+    if ring <= touch_radius:
+        raise ValueError("the proximity ring must sit outside the contact radius")
+
+    scan = minimum_scan(env, sensor_name, max_range_m)
+    touching = (scan >= lower) & (scan <= touch_radius)
+    proximity = (scan < ring) & ~touching
+    static = torch.where(
+        touching,
+        torch.full_like(scan, r_collision),
+        torch.where(proximity, r_scan * (ring - scan), torch.zeros_like(scan)),
+    )
+
+    if getattr(env, "pedestrian_bridge", None) is None:
+        return static
+    clearance, valid = _planar_clearances(env, robot_name, radius)
+    if clearance.shape[1] == 0:
+        return static
+    nearest = torch.where(valid, clearance, torch.full_like(clearance, float("inf"))).amin(dim=1)
+    touched = nearest <= 0.0
+    near = (nearest < ped_threshold) & ~touched
+    crowd = torch.where(
+        touched,
+        torch.full_like(nearest, r_collision),
+        torch.where(near, r_scan * (ped_threshold - nearest), torch.zeros_like(nearest)),
+    )
+    return torch.minimum(static, crowd)
 
 
 def angular_reward(
@@ -386,15 +562,26 @@ def heading_reward(
     angle_threshold_rad: float = ANGLE_THRESHOLD_RAD,
     vo_samples: int = VO_SAMPLES,
     pedestrian_range_m: float = VO_PEDESTRIAN_RANGE_M,
+    speed_gate: bool = True,
+    max_speed_m_s: float = MAX_SPEED_M_S,
 ) -> torch.Tensor:
     """Reward a heading that keeps the goal bearing outside pedestrian cones.
 
-    Mirrors ``DRLNavEnv._theta_reward``. With no pedestrian the preferred goal
-    bearing is used directly; otherwise ``vo_samples`` candidate headings are
+    Mirrors ``DRLNavEnv._theta_reward``: with no pedestrian the preferred goal
+    bearing is used directly, otherwise ``vo_samples`` candidate headings are
     drawn uniformly from ``[-pi, pi)``, headings whose velocity obstacle cone
     against any pedestrian within ``pedestrian_range_m`` is blocked are
-    discarded, and the free heading closest to the goal bearing is scored as
-    ``r_angle * (angle_threshold_rad - |heading|)``.
+    discarded, and the free heading closest to the goal bearing is scored.
+
+    Two corrections over the source, both needed for the task to be learnable:
+
+    * The margin is floored at zero. The source subtracted the whole deviation,
+      so a goal more than ``angle_threshold_rad`` off the nose paid a constant
+      negative that no action could remove, and it was the largest single term
+      in the return.
+    * The bonus is gated by forward speed. A stationary robot still scored the
+      full margin, which made "stand still while facing the goal" worth more
+      over a 50 s budget than arriving.
 
     Args:
         env: Environment with the robot and ``pedestrian_bridge``.
@@ -405,11 +592,17 @@ def heading_reward(
         angle_threshold_rad: Angular tolerance around the chosen heading [rad].
         vo_samples: Candidate headings per step.
         pedestrian_range_m: Pedestrians farther than this are ignored [m].
+        speed_gate: Scale the margin by ``|v| / max_speed_m_s``.
+        max_speed_m_s: Forward speed that unlocks the full margin [m/s].
+
+    Returns:
+        Non-negative heading score per environment, shape ``[num_envs]``.
     """
     radius = _nonnegative_parameter(robot_radius_m, "robot_radius_m")
     if type(vo_samples) is not int or vo_samples < 1:
         raise ValueError("vo_samples must be a positive integer")
     reach = _nonnegative_parameter(pedestrian_range_m, "pedestrian_range_m", positive=True)
+    limit = _nonnegative_parameter(max_speed_m_s, "max_speed_m_s", positive=True)
 
     goal = local_goal_base(env)
     preferred = torch.atan2(goal[:, 1], goal[:, 0])
@@ -420,7 +613,10 @@ def heading_reward(
     direction = _velocity_obstacle_heading(
         positions, velocities, valid, angles, preferred, forward, 3.0 * radius, reach
     )
-    return r_angle * (angle_threshold_rad - direction.abs())
+    margin = (angle_threshold_rad - direction.abs()).clamp_min(0.0)
+    if speed_gate:
+        margin = margin * (forward.abs() / limit).clamp(0.0, 1.0)
+    return r_angle * margin
 
 
 def _pedestrians_base(
@@ -551,7 +747,16 @@ def drl_vo_reward(env: object, **params: object) -> torch.Tensor:
         params, "robot_name", "goal_radius_m", "r_arrival", "r_waypoint", "max_iterations", "distance_history"
     )
     obstacle_params = _subset(
-        params, "robot_radius_m", "r_collision", "r_scan", "collision_lower_m", "sensor_name", "max_range_m"
+        params,
+        "robot_name",
+        "robot_radius_m",
+        "r_collision",
+        "r_scan",
+        "collision_lower_m",
+        "sensor_name",
+        "max_range_m",
+        "proximity_radius_scale",
+        "pedestrian_proximity_m",
     )
     angular_params = _subset(params, "robot_name", "r_rotation", "angular_speed_threshold_rad_s")
     heading_params = _subset(
@@ -562,6 +767,8 @@ def drl_vo_reward(env: object, **params: object) -> torch.Tensor:
         "angle_threshold_rad",
         "vo_samples",
         "pedestrian_range_m",
+        "speed_gate",
+        "max_speed_m_s",
     )
     return (
         goal_reward(env, **goal_params)

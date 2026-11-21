@@ -28,3 +28,4 @@ asset_root: /workspace/wujunlin/DRL-VO-stimulation/Character-assets
 ros_setup_path: /tmp/pedstrain_ros_env.sh
 ros_namespace: /pedestrian_sim
 ros_domain_id: 37
+request_timeout_s: 30.0

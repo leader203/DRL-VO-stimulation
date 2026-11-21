@@ -8,8 +8,8 @@
 ``DRLNavEnv._take_action`` mapped the policy's ``[-1, 1]`` pair onto a turtlebot
 twist::
 
-    v = (a0 + 1) * 0.25        # 0 .. 0.5 m/s
-    w = a1 * 2                 # -2 .. 2 rad/s
+    v = a0 * 0.9               # -0.9 .. 0.9 m/s, 0 stops
+    w = a1 * 3                 # -3 .. 3 rad/s
 
 The current robot has four driven wheels (``wheel_fl_joint`` .. ``wheel_rr_joint``)
 and a ``/cmd_vel`` graph that turns a twist into wheel speeds. Isaac Lab owns the
@@ -24,8 +24,12 @@ import torch
 from isaaclab.managers import ActionTerm, ActionTermCfg
 from isaaclab.utils import configclass
 
-MAX_LINEAR_M_S = 0.5
-MAX_ANGULAR_RAD_S = 2.0
+# The crowd table peaks at 0.9 m/s. A 0.5 m/s ceiling cannot clear a doorway
+# against a walker coming the other way, so the base gets the same top speed
+# as the people it has to avoid. 0.9 / 3.0 keeps the turn radius at 0.30 m,
+# which is what the 0.76 m stall doors allow.
+MAX_LINEAR_M_S = 0.9
+MAX_ANGULAR_RAD_S = 3.0
 
 
 class DifferentialWheelVelocityAction(ActionTerm):
@@ -95,7 +99,11 @@ class DifferentialWheelVelocityAction(ActionTerm):
         # the device the PhysX tensor API hands back, so the boundary is explicit.
         clipped = actions.reshape(-1, 2).clamp(-1.0, 1.0).to(device=self._raw.device, dtype=torch.float32)
         self._raw.copy_(clipped)
-        linear = (clipped[:, 0] + 1.0) * (MAX_LINEAR_M_S / 2.0)
+        # Signed, so a blocked robot can back out instead of holding the
+        # throttle until the episode ends. The forward-only mapping
+        # ``(a + 1) * 0.45`` has no inverse once a wall is reached, and the
+        # washroom is small enough that every episode reaches one.
+        linear = clipped[:, 0] * MAX_LINEAR_M_S
         angular = clipped[:, 1] * MAX_ANGULAR_RAD_S
         half_track = self.cfg.wheel_track_m / 2.0
         radius = self.cfg.wheel_radius_m

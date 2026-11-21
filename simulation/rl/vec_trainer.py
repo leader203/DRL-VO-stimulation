@@ -382,6 +382,17 @@ def train_vec(
     done = torch.zeros(num_envs, dtype=torch.bool, device=device)
     try:
         for iteration in range(1, iterations + 1):
+            # Exploration schedule. Wide early so the policy can discover that
+            # moving forward pays at all; narrow late so the sampled actions it
+            # trains on look like the deterministic mean it is scored on.
+            progress = (iteration - 1) / max(iterations - 1, 1)
+            if progress < 0.10:
+                noise_ceiling = 0.90
+            elif progress < 0.55:
+                noise_ceiling = 0.90 + (0.35 - 0.90) * ((progress - 0.10) / 0.45)
+            else:
+                noise_ceiling = 0.35 + (0.22 - 0.35) * ((progress - 0.55) / 0.45)
+            trainer.set_std_bounds(0.08, noise_ceiling)
             if learning_rate_decay is not None:
                 start, end = learning_rate_decay
                 fraction = (iteration - 1) / max(iterations - 1, 1)

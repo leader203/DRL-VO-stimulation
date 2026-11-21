@@ -1,0 +1,25 @@
+# Model-only DRL-VO evaluation with the overhead camera recording enabled.
+# Same scenario as configs/model_eval/simulation.toml (no pedestrians, no guard
+# veto) plus the [recording] block from configs/third_3/recording.toml.
+scenario = "../third_3/simulation.yaml"
+
+[pedestrians]
+enabled = false
+
+[navigation]
+settings_path = "../runtime/ros2_navigation_local.yaml"
+
+[simulation]
+duration = 40.0
+headless = true
+start_paused = false
+console = false
+render_viewport = true
+report_path = "output/model_eval_recording_status.json"
+
+[recording]
+enabled = true
+output_path = "output/model_eval_recording.mp4"
+fps = 12
+warmup_s = 0.0
+camera_view = "overhead"

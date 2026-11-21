@@ -69,25 +69,38 @@ def test_observation_matches_the_frozen_layout_and_normalization():
     assert tuple(observation.shape) == (1, obs.OBSERVATION_SIZE) == (1, 19202)
 
     # Pedestrian map: 2 x 80 x 80, x forward at 0.25 m per cell, y to the left.
+    # Channel 0 marks the cell, channel 1 carries the walker speed; both are
+    # scaled by 0.5 on the way out.
     row = int(2.5 / 0.25)
     column = int((10.0 - 0.0) / 0.25)
     index = row * 80 + column
     assert observation[0, index].item() == pytest.approx(1.0 / 2.0)
-    assert observation[0, 6400 + index].item() == pytest.approx(0.0)
+    assert observation[0, 6400 + index].item() == pytest.approx(1.0 / 2.0)
 
-    # A 15 m beam normalizes to 2 * 15 / 30 - 1 = 0.
-    assert torch.allclose(observation[0, 12800:19200], torch.zeros(6400))
+    # ``_prime_history`` writes the ring directly, so this raw 15 m reading skips
+    # the miss substitution and packs at 2 * 15 / 8 - 1 = 2.75.
+    assert torch.allclose(observation[0, 12800:19200], torch.full((6400,), 2.75))
 
     # The local goal (0.5, 0) normalizes to 2 * (0.5 + 2) / 4 - 1 = 0.25.
     assert observation[0, 19200].item() == pytest.approx(0.25)
     assert observation[0, 19201].item() == pytest.approx(0.0)
 
 
+def test_a_miss_packs_as_the_maximum_range():
+    """A beam with no return must not read as an obstacle against the bumper."""
+    env = _environment(scan=0.0)
+    env.common_step_counter = 3
+    observation = obs.drl_vo_observations(env)
+    # A 0 m return means nothing is inside range; it packs as the 8 m maximum:
+    # 2 * 8 / 8 - 1 = 1.
+    assert torch.allclose(observation[0, 12800:19200], torch.ones(6400))
+
+
 def test_scan_block_uses_the_min_and_mean_of_nine_beam_groups():
     env = _environment(scan=3.0)
     _prime_history(env, 3.0)
     observation = obs.drl_vo_observations(env)
-    expected = 2.0 * 3.0 / 30.0 - 1.0
+    expected = 2.0 * 3.0 / 8.0 - 1.0
     assert torch.allclose(observation[0, 12800:19200], torch.full((6400,), expected))
 
     state = obs.observation_state(env)
@@ -95,9 +108,11 @@ def test_scan_block_uses_the_min_and_mean_of_nine_beam_groups():
     observation = obs.drl_vo_observations(env)
     block = observation[0, 12800:19200].reshape(4, 1600)
     assert torch.equal(block[0], block[3])
-    # Group zero holds beams 0..8: minimum 0 m, mean 4 m.
+    # Group zero holds beams 0..8: minimum 0 m, mean 4 m. A raw 0 written
+    # straight into the ring skips the miss substitution, so the minimum still
+    # packs as -1; only the scale moved from 30 m to 8 m.
     assert block[0, 0].item() == pytest.approx(-1.0)
-    assert block[0, 80].item() == pytest.approx(2.0 * 4.0 / 30.0 - 1.0)
+    assert block[0, 80].item() == pytest.approx(2.0 * 4.0 / 8.0 - 1.0)
 
 
 def test_scan_history_keeps_the_ten_latest_frames():

@@ -223,8 +223,7 @@ def test_actor_update_requires_a_real_positive_timestep(tmp_path, monkeypatch, d
     population.close()
 
 
-def test_sdk_retarget_receives_source_order_and_preserves_the_complete_target_pose(tmp_path, monkeypatch):
-    import sys
+def test_retarget_aims_every_bone_and_reproduces_the_rest_pose(tmp_path):
     import types
 
     from pxr import Sdf, UsdUtils
@@ -270,11 +269,14 @@ def test_sdk_retarget_receives_source_order_and_preserves_the_complete_target_po
     animation = UsdSkel.Animation.Define(source, "/Visual/SourceMotion")
     animation.CreateJointsAttr(skeleton.GetJointsAttr().Get())
     for time in (0.0, 1.0):
+        # An unanimated clip: every joint holds its rest rotation, so a faithful
+        # retarget must hand back the target's own rest pose.
         animation.CreateTranslationsAttr().Set([Gf.Vec3f(5.0, 6.0, 7.0) for _ in range(81)], time)
         animation.CreateRotationsAttr().Set([Gf.Quatf(1.0) for _ in range(81)], time)
     motion = types.SimpleNamespace(
         path=source_path,
         skeleton=skeleton,
+        joints=tuple(skeleton.GetJointsAttr().Get()),
         tags=tags,
         units=0.01,
         tcps=30.0,
@@ -283,34 +285,25 @@ def test_sdk_retarget_receives_source_order_and_preserves_the_complete_target_po
         idle=animation,
         walk_times=(0.0, 1.0),
         idle_times=(0.0, 1.0),
+        travel_direction=lambda: Gf.Vec3d(0.0, 0.0, 1.0),
     )
-    calls = []
 
-    class RetargetController:
-        def __init__(self, file, source_path, target_stage, target_path):
-            assert file == str(motion.path) and source_path == str(skeleton.GetPath())
-            assert (
-                UsdUtils.StageCache.Get().Find(Usd.StageCache.Id.FromLongInt(target_stage)).GetPrimAtPath(target_path)
-            )
+    def parts(quaternion):
+        return (quaternion.GetReal(), *tuple(quaternion.GetImaginary()))
 
-        def retarget(self, translations, rotations):
-            assert len(translations) == len(rotations) == 81
-            assert translations[0] == (0.0, 0.0, 0.0) and rotations[0] == (0.0, 0.0, 0.0, 1.0)
-            calls.append(True)
-            return [(0.0, 0.0, i * 0.001) for i in range(101)], [(0.0, 0.0, 0.0, 1.0)] * 101
+    def distance(first, second):
+        a, b = parts(first), parts(second)
+        return abs(abs(sum(x * y for x, y in zip(a, b))) - 1.0)
 
-    names = ("omni", "omni.anim", "omni.anim.retarget", "omni.anim.retarget.core")
-    modules = {name: types.ModuleType(name) for name in names}
-    for name, module in modules.items():
-        monkeypatch.setitem(sys.modules, name, module)
-        if "." in name:
-            parent, child = name.rsplit(".", 1)
-            setattr(modules[parent], child, module)
-    modules[names[-1]].RetargetController = RetargetController
-    monkeypatch.setitem(sys.modules, "carb", types.SimpleNamespace(Float3=lambda *v: v, Float4=lambda *v: v))
     rig = actors._Rig(target_path, motion)
-    assert len(calls) == 4 and len(rig.walk[0][0]) == len(rig.walk[0][1]) == 101
-    assert rig.walk[0][0][-1][2] == pytest.approx(0.1)
+    assert rig.controller is None
+    assert len(rig.walk) == 2 and len(rig.idle) == 2
+    for translations, rotations in (*rig.walk, *rig.idle):
+        assert len(translations) == len(rotations) == 101
+        assert all(abs(sum(v * v for v in parts(q)) - 1.0) < 1e-5 for q in rotations)
+        for index, matrix in enumerate(rig.rest):
+            assert distance(rotations[index], matrix.ExtractRotationQuat()) < 1e-4
+            assert Gf.Vec3f(translations[index]) == Gf.Vec3f(matrix.ExtractTranslation())
     identifier = rig.cache_id
     rig.close()
     assert not UsdUtils.StageCache.Get().Find(identifier)

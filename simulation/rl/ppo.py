@@ -198,6 +198,12 @@ class DrlVoPolicy(nn.Module):
         self.action_net = nn.Linear(self.mlp_extractor.latent_dim_pi, ACTION_SIZE)
         self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1)
         self.log_std = nn.Parameter(torch.zeros(ACTION_SIZE))
+        # Bounded noise. Unbounded, sigma walked from 1.0 to 1.6 within
+        # eighteen iterations, which clamps most sampled actions to +-1 while
+        # evaluation runs the mean - the agent then trains on a distribution
+        # it never acts on. The trainer lowers the ceiling over time.
+        self.std_low = 0.08
+        self.std_high = 0.90
         self._range = (-1.0, 1.0)
 
     def forward(self, observations: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -205,7 +211,15 @@ class DrlVoPolicy(nn.Module):
         features = self.features_extractor(observations)
         mean = self.action_net(self.mlp_extractor.policy_net(features))
         value = self.value_net(self.mlp_extractor.value_net(features)).squeeze(-1)
-        return mean, value, self.log_std.exp().expand_as(mean)
+        std = self.log_std.clamp(math.log(self.std_low), math.log(self.std_high)).exp()
+        return mean, value, std.expand_as(mean)
+
+    def set_std_bounds(self, low: float, high: float) -> None:
+        """Clamp the exploration noise to ``[low, high]`` standard deviations."""
+        if not 0.0 < low <= high:
+            raise ValueError(f"std bounds must satisfy 0 < low <= high, got {low}, {high}")
+        self.std_low = float(low)
+        self.std_high = float(high)
 
     def distribution(self, observations: torch.Tensor) -> tuple[torch.distributions.Normal, torch.Tensor]:
         """Return the diagonal Gaussian and the state value."""
@@ -333,6 +347,10 @@ class DrlVoPPO:
 
     # -- inference ------------------------------------------------------
 
+    def set_std_bounds(self, low: float, high: float) -> None:
+        """Forward the exploration-noise bounds to the policy."""
+        self.policy.set_std_bounds(low, high)
+
     @torch.no_grad()
     def act(self, observation: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Sample an unclipped action with its value and log-probability."""
@@ -363,6 +381,8 @@ class DrlVoPPO:
         count = buffer.position
         total_policy = total_value = total_entropy = total_kl = total_clip = 0.0
         batches = 0
+        stopped_early = False
+        target_kl = self.config.target_kl
         for _ in range(self.config.n_epochs):
             permutation = torch.randperm(count, generator=self.generator)
             for start in range(0, count, self.config.batch_size):
@@ -400,7 +420,16 @@ class DrlVoPPO:
                 total_kl += float(approximate_kl)
                 total_clip += float(clipped)
                 batches += 1
+                # A run whose KL drifts from 0.005 to 0.25 and clips six of every
+                # ten samples is not learning, it is thrashing. Standard PPO
+                # guard: once the policy has moved 1.5x past the budget, stop
+                # spending epochs on stale off-policy data.
+                if target_kl is not None and float(approximate_kl) > 1.5 * float(target_kl):
+                    stopped_early = True
+                    break
             del old_values
+            if stopped_early:
+                break
         self.iteration += 1
         self.steps_done += count
         return {
@@ -412,6 +441,7 @@ class DrlVoPPO:
             "transitions": float(count),
             "epochs": float(self.config.n_epochs),
             "batches": float(batches),
+            "early_stop": float(stopped_early),
         }
 
     # -- persistence ----------------------------------------------------

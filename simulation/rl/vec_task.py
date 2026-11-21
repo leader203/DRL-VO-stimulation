@@ -50,17 +50,27 @@ from .drive import DifferentialWheelVelocityActionCfg
 from .drl_observations import drl_vo_observations, reset_observation_state
 from .rewards import (
     ANGLE_THRESHOLD_RAD,
-    ANGULAR_SPEED_THRESHOLD_RAD_S,
+    ANGULAR_THRESHOLD_NARROW,
     COLLISION_LOWER_M,
+    COLLISION_RADIUS_M,
+    DEADLOCK_ESCALATE_STEPS,
+    DEADLOCK_STEPS,
+    DEADLOCK_WINDOW_M,
     GOAL_RADIUS_M,
+    MAX_SPEED_M_S,
+    PEDESTRIAN_PROXIMITY_M,
+    PROXIMITY_RING_M,
     R_ANGLE,
     R_ARRIVAL,
     R_COLLISION,
-    R_ROTATION,
-    R_SCAN_DISTANCE,
+    R_DEADLOCK,
+    R_DEADLOCK_DEEP,
+    R_PROXIMITY_GAIN,
+    R_ROTATION_NARROW,
     R_WAYPOINT,
     _planar_clearances,
     angular_reward,
+    deadlock_reward,
     episode_state,
     goal_reached,
     goal_reward,
@@ -146,7 +156,13 @@ def drl_vo_vec_cfg(
                 "wheels": ImplicitActuatorCfg(
                     joint_names_expr=list(WHEEL_JOINTS),
                     stiffness=0.0,
-                    damping=2.0,
+                    # The asset ships the wheel drives at damping 0.5, whose torque
+                    # at 18 rad/s is 9 N.m -- about 180 N at the rim across four
+                    # wheels, which the base cannot break away from rest with.  The
+                    # measured joint speed stayed at 0.006 rad/s against a -1.33
+                    # target, so the policy was moving a robot that could not move.
+                    damping=50.0,
+                    effort_limit_sim=80.0,
                     velocity_limit_sim=40.0,
                 ),
                 "arm": ImplicitActuatorCfg(
@@ -179,14 +195,23 @@ def drl_vo_vec_cfg(
 
     @configclass
     class RewardsCfg:
-        """The four migrated DRL-VO terms; weights are the source constants."""
+        """Progress-led shaping: reaching the goal has to out-earn every other term."""
 
+        # The four terms of the paper, plus the deadlock charge the narrow
+        # washroom needs: every paper term is a function of the current state,
+        # so a robot parked in the 4 m aisle scores whatever an arriving robot
+        # scores minus the arrival bonus, and nothing pushes it to move.
         goal = RewardTermCfg(
             func=goal_reward,
             weight=1.0,
             params={
                 "r_arrival": R_ARRIVAL,
                 "r_waypoint": R_WAYPOINT,
+                # One step, so 10 per metre is 10 per metre. The ten-slot
+                # window paid a ten-step difference every step, which made
+                # the effective gain 100 per metre and shrank arrival to 4%
+                # of the return.
+                "distance_history": 1,
                 "goal_radius_m": goal_radius_m,
                 "max_iterations": episode_steps - 1,
             },
@@ -195,16 +220,23 @@ def drl_vo_vec_cfg(
             func=obstacle_reward,
             weight=1.0,
             params={
+                "robot_name": "robot",
                 "robot_radius_m": robot_radius_m,
                 "r_collision": R_COLLISION,
-                "r_scan": R_SCAN_DISTANCE,
+                "r_scan": R_PROXIMITY_GAIN,
                 "collision_lower_m": COLLISION_LOWER_M,
+                "contact_radius_m": COLLISION_RADIUS_M,
+                "proximity_ring_m": PROXIMITY_RING_M,
+                "pedestrian_proximity_m": PEDESTRIAN_PROXIMITY_M,
             },
         )
         angular = RewardTermCfg(
             func=angular_reward,
             weight=1.0,
-            params={"r_rotation": R_ROTATION, "angular_speed_threshold_rad_s": ANGULAR_SPEED_THRESHOLD_RAD_S},
+            params={
+                "r_rotation": R_ROTATION_NARROW,
+                "angular_speed_threshold_rad_s": ANGULAR_THRESHOLD_NARROW,
+            },
         )
         heading = RewardTermCfg(
             func=heading_reward,
@@ -213,6 +245,19 @@ def drl_vo_vec_cfg(
                 "robot_radius_m": robot_radius_m,
                 "r_angle": R_ANGLE,
                 "angle_threshold_rad": ANGLE_THRESHOLD_RAD,
+                "speed_gate": True,
+                "max_speed_m_s": MAX_SPEED_M_S,
+            },
+        )
+        deadlock = RewardTermCfg(
+            func=deadlock_reward,
+            weight=1.0,
+            params={
+                "window_m": DEADLOCK_WINDOW_M,
+                "steps": DEADLOCK_STEPS,
+                "escalate_steps": DEADLOCK_ESCALATE_STEPS,
+                "r_deadlock": R_DEADLOCK,
+                "r_deep": R_DEADLOCK_DEEP,
             },
         )
 
@@ -223,7 +268,7 @@ def drl_vo_vec_cfg(
         arrival = TerminationTermCfg(func=goal_reached, params={"goal_radius_m": goal_radius_m})
         collision = TerminationTermCfg(
             func=clearance_contact,
-            params={"robot_radius_m": robot_radius_m, "budget": collision_budget},
+            params={"robot_radius_m": COLLISION_RADIUS_M, "budget": collision_budget},
         )
         pedestrian = TerminationTermCfg(
             func=pedestrian_contact,
@@ -332,8 +377,16 @@ def reset_robot_random(env: object, env_ids: object) -> None:
     if crowd is not None:
         from .vec_pedestrians import PEDESTRIAN_RADIUS_M
 
-        keep_out = PEDESTRIAN_RADIUS_M + float(ROBOT_RADIUS_M) + 0.2
-        avoid = [(route.start_xy[0], route.start_xy[1], keep_out) for route in crowd.routes]
+        # Publish the frame this reset will actually land on before reading the
+        # disks.  With a global crowd clock the walkers do not restart with the
+        # episode, so the spawn positions are stale -- keeping out of them let
+        # the robot materialise inside a walker and lose on step one.
+        crowd.advance(env)
+        keep_out = PEDESTRIAN_RADIUS_M + float(ROBOT_RADIUS_M) + 0.35
+        if getattr(crowd, "phase", "episode") == "global":
+            avoid = [(float(x), float(y), keep_out) for x, y in crowd.room_xy()[0]]
+        else:
+            avoid = [(route.start_xy[0], route.start_xy[1], keep_out) for route in crowd.routes]
     sampled = reference.sample_start_poses(len(ids), avoid=avoid)
     origins = env.scene.env_origins
     origins = origins if isinstance(origins, torch.Tensor) else origins.torch

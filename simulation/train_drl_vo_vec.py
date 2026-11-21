@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import os
 import time
 import traceback
 from datetime import datetime
@@ -61,7 +62,33 @@ def _parse() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--epochs", type=int, default=10, help="PPO epochs per rollout.")
+    parser.add_argument(
+        "--target-kl",
+        type=float,
+        default=None,
+        help=(
+            "Stop an iteration early once the measured KL exceeds 1.5x this budget. "
+            "Without it a run can drift to KL 0.25 with 63%% of samples clipped, which "
+            "is how the single-card run stalled at a zero arrival rate."
+        ),
+    )
     parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate.")
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=0.995,
+        help=(
+            "Discount per policy step. The median goal is 4.9 m away, which is 200-300 "
+            "steps at 0.5 m/s; at the source's 0.99 an arrival reward 250 steps out is "
+            "already weighted 0.08, so the horizon has to be longer than the task."
+        ),
+    )
+    parser.add_argument(
+        "--gae-lambda",
+        type=float,
+        default=0.97,
+        help="GAE trace decay; with --gamma 0.995 the advantage horizon is about 29 steps.",
+    )
     parser.add_argument("--lr-final", type=float, default=None, help="Final learning rate of a linear schedule.")
     parser.add_argument("--warm-start", type=Path, help="Checkpoint that initialises the policy.")
     parser.add_argument("--checkpoint", type=Path, help="Checkpoint to evaluate in --mode eval.")
@@ -77,10 +104,51 @@ def _parse() -> argparse.Namespace:
     parser.add_argument("--robot-usd", type=Path, default=DEFAULT_ROBOT, help="Cloneable robot asset.")
     parser.add_argument("--env-spacing", type=float, default=16.0, help="Distance between clone origins [m].")
     parser.add_argument("--robot-radius", type=float, default=0.37, help="Footprint radius [m].")
-    parser.add_argument("--goal-radius", type=float, default=0.3, help="Arrival tolerance [m].")
+    parser.add_argument("--goal-radius", type=float, default=0.2, help="Arrival tolerance [m].")
     parser.add_argument("--collision-budget", type=int, default=1, help="Contact steps that end an episode.")
     parser.add_argument("--replan-steps", type=int, default=10, help="Policy steps between A* replans.")
-    parser.add_argument("--lookahead", type=float, default=0.5, help="Pure-pursuit lookahead [m].")
+    parser.add_argument(
+        "--lookahead",
+        type=float,
+        default=0.25,
+        help=(
+            "Pure-pursuit lookahead [m], i.e. the distance to the subgoal the policy steers at. "
+            "The washroom's stall doorways are 0.76 m wide, so a subgoal further than about "
+            "0.38 m ahead sits on the far side of the jamb and the pure-pursuit chord cuts into "
+            "the partition. 0.25 m keeps the chord inside the doorway."
+        ),
+    )
+    parser.add_argument(
+        "--goal-clearance",
+        type=float,
+        default=0.60,
+        help=(
+            "Static clearance a sampled goal cell must keep from walls [m]. Start poses already "
+            "need 0.60 m, so goals use the same figure: a goal inside the 0.75 m proximity ring "
+            "would charge the policy for standing on its own target, and 0.60 m is the smallest "
+            "value that still leaves the whole main lobe connected."
+        ),
+    )
+    parser.add_argument(
+        "--plan-margin",
+        type=float,
+        default=0.02,
+        help=(
+            "Extra A* clearance on top of the footprint [m]. At 0.05 m the 0.88 m corridor leaves "
+            "0.02 m per side, which the coarse raster eats: 29%% of corridor pairs planned, versus "
+            "58%% at 0.02 m."
+        ),
+    )
+    parser.add_argument(
+        "--plan-downsample",
+        type=int,
+        default=2,
+        help=(
+            "A* raster coarsening factor. 3 gives a 0.06 m cell, which cannot resolve a 0.88 m "
+            "corridor around a 0.37 m footprint; 2 costs about twice the plan time and plans twice "
+            "as many pairs."
+        ),
+    )
     parser.add_argument("--save-every", type=int, default=10, help="Checkpoint every N iterations; 0 disables.")
     parser.add_argument("--no-fabric", action="store_true", help="Read state through the PhysX tensor API.")
     parser.add_argument("--watchdog-s", type=int, default=0, help="Dump thread stacks after this many seconds.")
@@ -96,7 +164,16 @@ def _parse() -> argparse.Namespace:
         "--scenario",
         type=Path,
         default=_SIMULATION / "configs" / "third_3" / "simulation.yaml",
-        help="Scenario YAML whose pedestrians block supplies the walker routes.",
+        help="Scenario YAML whose pedestrians block documents the baked routes.",
+    )
+    parser.add_argument(
+        "--ped-trace",
+        type=Path,
+        default=None,
+        help=(
+            "Baked crowd table from gen_ped_trace.py; the ROS 2 planner, social forces and RVO2 "
+            "run offline and every room replays the result. Defaults to <run-dir>/../ped_trace.npz."
+        ),
     )
     parser.add_argument(
         "--pedestrians",
@@ -107,6 +184,25 @@ def _parse() -> argparse.Namespace:
     )
     parser.add_argument("--no-pedestrians", dest="pedestrians", action="store_false", help="Empty rooms.")
     parser.add_argument(
+        "--ped-speed-scale",
+        type=float,
+        default=1.0,
+        help=(
+            "Rate along the baked path: 0.5 halves every walker without moving it off the table. "
+            "The table peaks at 0.9 m/s, which a 0.9 m/s base cannot out-turn in a 0.76 m doorway."
+        ),
+    )
+    parser.add_argument(
+        "--ped-clock",
+        default="episode",
+        choices=("episode", "global"),
+        help=(
+            "episode restarts the crowd with every reset; global keeps one clock for the run. "
+            "The table opens with four standing walkers, so episode phase spends the first 2 s of "
+            "every episode on a static crowd."
+        ),
+    )
+    parser.add_argument(
         "--asset-root",
         type=Path,
         default=None,
@@ -114,6 +210,24 @@ def _parse() -> argparse.Namespace:
     )
     parser.add_argument("--character-gender", default="male", help="male, female or any, as characters.yaml labels.")
     parser.add_argument("--character-offset", type=int, default=0, help="Rotates the character pool per machine.")
+    parser.add_argument(
+        "--characters",
+        dest="characters",
+        action="store_true",
+        default=False,
+        help="Reference the skinned character USDs in every room; headless training leaves them out.",
+    )
+    parser.add_argument("--no-characters", dest="characters", action="store_false", help="Crowd state only.")
+    parser.add_argument(
+        "--visual-envs",
+        type=int,
+        default=1,
+        help=(
+            "Rooms that receive the skinned characters. The evaluation camera only looks into "
+            "room 0, so four characters are enough; spawning them in all 512 rooms costs stage "
+            "time and 2048 USD writes per visual step."
+        ),
+    )
     parser.add_argument(
         "--visual-stride",
         type=int,
@@ -131,6 +245,26 @@ def _parse() -> argparse.Namespace:
     parser.add_argument("--video-stride", type=int, default=2, help="Capture one frame every N policy steps.")
     parser.add_argument("--video-width", type=int, default=640, help="Clip width [px].")
     parser.add_argument("--video-height", type=int, default=400, help="Clip height [px].")
+    parser.add_argument(
+        "--render-camera",
+        default=None,
+        help=(
+            "Name of a camera prim inside the room asset (Overview, Hero, ...). "
+            "Setting it turns Kit's cameras on for an evaluation clip; training stays camera-free."
+        ),
+    )
+    parser.add_argument(
+        "--render-video",
+        type=Path,
+        default=None,
+        help="Where the evaluation clip goes; defaults to <output>/videos/eval.mp4.",
+    )
+    parser.add_argument(
+        "--clip-attempts",
+        type=int,
+        default=4,
+        help="Episodes filmed per clip; the best one (arrival first, then longest) is kept.",
+    )
     return parser.parse_args()
 
 
@@ -145,6 +279,7 @@ def _launch(args: argparse.Namespace):
         launcher_args={
             "headless": True,
             "device": args.device,
+            "enable_cameras": bool(getattr(args, "render_camera", None)),
             "kit_args": "--/crashreporter/enabled=false --/crashreporter/skipOldDumpUpload=true",
         }
     ).app
@@ -173,6 +308,71 @@ def _room_exclusions(env: object, scene_roots: list[str]) -> tuple[str, ...]:
     for root in scene_roots:
         excluded.append(f"{root}/Robot")
     return tuple(excluded)
+
+
+
+def _seal_doors(stage: object, data: dict, frame: object) -> None:
+    """Stamp every door footprint into the raster as occupied, in place.
+
+    The entrance door carries a revolute hinge and a static collider, and PhysX
+    stops the base against it, but the mapper's static overlap pass leaves the
+    whole leaf out of the raster. The consequences compound: the 720-beam scan is
+    cast on the raster, so the policy cannot see the door; the clearance field
+    reports open floor where the door stands; and the reachable set leaks into the
+    corridor behind it, so a goal can be sampled outside the room.
+
+    A door is read from its world bounding box. Anything wider than 3 m is refused,
+    because an axis-aligned box around a door swung to 45 degrees would wall off
+    the room rather than seal one leaf.
+
+    Args:
+        stage: Open USD stage holding the room clones.
+        data: Mapping returned by ``build_occupancy_grid``; ``occupancy`` is
+            modified in place.
+        frame: Coordinate conversion used when the raster was built.
+    """
+    import numpy as np
+    from pxr import Usd, UsdGeom, UsdPhysics
+
+    occupancy = data["occupancy"]
+    resolution = float(data["resolution_m"])
+    origin = np.asarray(data["origin_xy_m"], dtype=np.float64)
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render])
+    sealed = 0
+    for prim in stage.Traverse(Usd.TraverseInstanceProxies()):
+        path = str(prim.GetPath())
+        if "/Door" not in path or not prim.HasAPI(UsdPhysics.CollisionAPI):
+            continue
+        if not prim.IsA(UsdGeom.Boundable):
+            continue
+        box = cache.ComputeWorldBound(prim).ComputeAlignedRange()
+        low, high = box.GetMin(), box.GetMax()
+        if high[2] < 0.15 or low[2] > 1.2:
+            # Above the body: a transom, or hardware the base passes under.
+            continue
+        corners_x = (low[0], high[0])
+        corners_y = (low[1], high[1])
+        if (corners_x[1] - corners_x[0]) > 3.0 or (corners_y[1] - corners_y[0]) > 3.0:
+            continue
+        # The raster lives in the ROS map frame while the USD is in stage world, so
+        # the footprint goes through the same conversion the planner uses. All four
+        # corners are mapped because a non-zero map yaw would otherwise skew the box.
+        mapped = [
+            frame.stage_to_ros((x, y, 0.0))
+            for x in corners_x
+            for y in corners_y
+        ]
+        ros_x = [point[0] for point in mapped]
+        ros_y = [point[1] for point in mapped]
+        row_low = max(0, int(np.floor((min(ros_y) - origin[1]) / resolution)))
+        row_high = min(occupancy.shape[0], int(np.ceil((max(ros_y) - origin[1]) / resolution)) + 1)
+        column_low = max(0, int(np.floor((min(ros_x) - origin[0]) / resolution)))
+        column_high = min(occupancy.shape[1], int(np.ceil((max(ros_x) - origin[0]) / resolution)) + 1)
+        if row_low >= row_high or column_low >= column_high:
+            continue
+        occupancy[row_low:row_high, column_low:column_high] = 100
+        sealed += 1
+    print(f"[drl-vo-vec] sealed {sealed} door colliders into the occupancy raster", flush=True)
 
 
 def _build_grid(env: object, args: argparse.Namespace):
@@ -237,6 +437,7 @@ def _build_grid(env: object, args: argparse.Namespace):
         raise RuntimeError("The multi-environment stage is not open")
     roots = [f"/World/envs/env_{index}" for index in range(int(env.num_envs))]
     data = build_occupancy_grid(stage, settings, frame, excluded_roots=_room_exclusions(env, roots))
+    _seal_doors(stage, data, frame)
     cache.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         cache,
@@ -271,6 +472,9 @@ def _attach_reference(env: object, args: argparse.Namespace):
         lookahead_m=args.lookahead,
         replan_period_steps=args.replan_steps,
         arrival_tolerance_m=args.goal_radius,
+        goal_clearance_m=args.goal_clearance,
+        margin_m=args.plan_margin,
+        plan_downsample=args.plan_downsample,
         seed=args.seed,
         device=env.device,
         map_offset=offset,
@@ -281,29 +485,48 @@ def _attach_reference(env: object, args: argparse.Namespace):
 
 
 def _attach_pedestrians(env: object, args: argparse.Namespace):
-    """Replay the scenario's walkers in every room and place their character USDs."""
+    """Replay the baked ROS 2 crowd in every room and place their character USDs."""
     from pedstrain_simulation.simulation.rl.vec_pedestrians import (
         VecCharacterStage,
         VecPedestrians,
         load_character_pool,
-        load_routes,
         pick_characters,
     )
 
-    routes = load_routes(args.scenario)
+    trace = args.ped_trace
+    if trace is None:
+        output = Path(args.output) if args.output is not None else Path("runs")
+        trace = output.parent / "ped_trace.npz"
+    trace = Path(trace).expanduser()
+    if not trace.is_file():
+        raise FileNotFoundError(
+            f"Crowd table {trace} is missing; bake it with gen_ped_trace.py before training."
+        )
     crowd = VecPedestrians(
-        routes,
+        trace,
         num_envs=int(env.num_envs),
         device=env.device,
         dt=float(env.step_dt),
+        phase=str(getattr(args, "ped_clock", "episode")),
+        speed_scale=float(getattr(args, "ped_speed_scale", 1.0)),
     )
     # ``pedestrian_bridge`` is the key the migrated reward and observation read;
     # ``drl_vo_crowd`` is the one the reset event and the stage sync advance.
     env.drl_vo_crowd = crowd
     env.pedestrian_bridge = crowd
+    if not args.characters:
+        # Headless training never reads the visuals, and referencing 4 skinned
+        # characters per room costs stage time and per-step USD writes.
+        env.drl_vo_characters = None
+        return crowd, None
     pool = load_character_pool(args.asset_root, gender=args.character_gender)
-    characters = pick_characters(pool, len(routes), offset=args.character_offset)
-    stage = VecCharacterStage(characters, num_envs=int(env.num_envs), visual_stride=args.visual_stride)
+    characters = pick_characters(pool, crowd.count, offset=args.character_offset)
+    stage = VecCharacterStage(
+        characters,
+        num_envs=int(env.num_envs),
+        visual_stride=args.visual_stride,
+        visual_envs=range(min(int(args.visual_envs), int(env.num_envs))),
+    )
     stage.attach(env, crowd)
     env.drl_vo_characters = stage
     return crowd, stage
@@ -398,8 +621,169 @@ def _render_replay(path: Path, grid, track_robot, track_crowd, goals, *, fps: in
     return {"frames": len(track_robot), "fps": int(fps), "path": str(path)}
 
 
-def _make_probe(env, reference, grid, crowd, args: argparse.Namespace, output: Path, device):
-    """Build the per-iteration hook that scores the policy and records a replay."""
+def _find_env_camera(env_index: int, name: str) -> str | None:
+    """Path of the camera ``name`` that the room asset carries inside one clone."""
+    import omni.usd
+    from pxr import UsdGeom
+
+    stage = omni.usd.get_context().get_stage()
+    prefix = f"/World/envs/env_{int(env_index)}"
+    for prim in stage.Traverse():
+        path = prim.GetPath().pathString
+        if path.startswith(prefix) and prim.IsA(UsdGeom.Camera) and prim.GetName() == name:
+            return path
+    return None
+
+
+def _record_camera_clip(app, env, reference, crowd, policy, args, device, path: Path) -> dict:
+    """Film one episode through a camera that already lives in the room asset.
+
+    Training never turns Kit's cameras on; this runs only in ``--mode eval``, so
+    RTX never competes with PPO for the GPU. Several episodes are filmed because a
+    single rollout often ends in contact after a second, which makes a useless
+    clip; the best take is kept.
+    """
+    import numpy as np
+    import torch
+
+    import omni.replicator.core as rep
+    import omni.timeline
+    from pxr import UsdGeom
+
+    from pedstrain_simulation.simulation.rl.vec_trainer import observations_tensor, termination_flags
+
+    camera_path = _find_env_camera(0, args.render_camera)
+    if camera_path is None:
+        raise RuntimeError(f"no camera named {args.render_camera!r} inside env_0")
+
+    # match the render product to the camera's own aperture, otherwise RTX pads
+    # the frame with black bars
+    cam_prim = omni.usd.get_context().get_stage().GetPrimAtPath(camera_path)
+    camera = UsdGeom.Camera(cam_prim)
+    horizontal = float(camera.GetHorizontalApertureAttr().Get() or 20.955)
+    vertical = float(camera.GetVerticalApertureAttr().Get() or 20.955)
+    width = int(args.video_width)
+    height = int(round(width * vertical / horizontal)) if horizontal > 0 else int(args.video_height)
+    # libx264 writes yuv420p, which needs both dimensions even. An odd height makes
+    # ffmpeg exit mid-stream, which surfaces as "Broken pipe" and a zero-byte clip:
+    # the room's Hero camera is 640x467, so this is the common case, not the edge.
+    width -= width % 2
+    height -= height % 2
+
+    product = rep.create.render_product(camera_path, (width, height))
+    annotator = rep.AnnotatorRegistry.get_annotator("rgb")
+    annotator.attach([product])
+    # ``orchestrator.step`` polls for a capture slot and burns a thousand app
+    # updates when none is scheduled, which costs ~27 s per frame. Capturing on
+    # every played frame keeps it around 0.05 s.
+    try:
+        rep.orchestrator.set_capture_on_play(True)
+    except Exception as exc:  # pragma: no cover - API drift
+        print(f"[drl-vo-vec] capture_on_play unavailable: {exc!r}", flush=True)
+    omni.timeline.get_timeline_interface().play()
+    for _ in range(4):
+        app.update()
+    print(f"[drl-vo-vec] filming through {camera_path} at {width}x{height}", flush=True)
+
+    stride = max(int(args.video_stride), 1)
+    attempts = max(1, int(args.clip_attempts))
+
+    def take() -> tuple[list, str, float]:
+        frames: list = []
+        shot_seconds: list[float] = []
+        outcome = "still running"
+        observation = observations_tensor(env.reset()[0], device)
+        for step in range(int(args.video_steps)):
+            with torch.no_grad():
+                mean, _, _ = policy(observation)
+            if os.environ.get("DRL_VO_TRACE_MOTION"):
+                _root = env.scene["robot"].data.root_pos_w.torch[0]
+                print(
+                    f"[trace] step {step} action ({float(mean[0, 0]):+.2f},{float(mean[0, 1]):+.2f}) "
+                    f"base ({float(_root[0]):+.2f},{float(_root[1]):+.2f})",
+                    flush=True,
+                )
+            observation, _, terminated, truncated, _ = env.step(torch.clamp(mean, -1.0, 1.0))
+            if step % stride == 0:
+                started = time.perf_counter()
+                app.update()
+                data = annotator.get_data()
+                if data is None:
+                    rep.orchestrator.step(rt_subframes=1)
+                    data = annotator.get_data()
+                shot_seconds.append(time.perf_counter() - started)
+                if data is not None:
+                    frames.append(np.asarray(data)[:, :, :3])
+            if bool((terminated | truncated).reshape(-1)[0]):
+                flags = termination_flags(env)
+                if bool(flags["arrival"].reshape(-1)[0]):
+                    outcome = f"arrived in {step * float(env.step_dt):.1f} s"
+                elif bool(flags["collision"].reshape(-1)[0]) or bool(
+                    flags.get("pedestrian", torch.zeros(1, dtype=torch.bool)).reshape(-1)[0]
+                ):
+                    outcome = f"contact at {step * float(env.step_dt):.1f} s"
+                else:
+                    outcome = f"timeout at {step * float(env.step_dt):.1f} s"
+                break
+            observation = observations_tensor(observation, device)
+        mean_s = float(sum(shot_seconds) / len(shot_seconds)) if shot_seconds else 0.0
+        return frames, outcome, mean_s
+
+    best_frames: list = []
+    best_outcome = "no frame captured"
+    frame_cost = 0.0
+    for attempt in range(attempts):
+        frames, outcome, mean_s = take()
+        frame_cost = mean_s
+        print(f"[drl-vo-vec] take {attempt + 1}/{attempts}: {len(frames)} frames, {outcome}", flush=True)
+        better = (
+            not best_frames
+            or (outcome.startswith("arrived") and not best_outcome.startswith("arrived"))
+            or (
+                outcome.startswith("arrived") == best_outcome.startswith("arrived")
+                and len(frames) > len(best_frames)
+            )
+        )
+        if better:
+            best_frames, best_outcome = frames, outcome
+        if best_outcome.startswith("arrived") and attempt + 1 >= 2:
+            break
+
+    fps = max(1, int(round(1.0 / (float(env.step_dt) * stride))))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if best_frames:
+        import imageio.v2 as imageio
+
+        imageio.mimsave(path, best_frames, fps=fps, macro_block_size=1)
+    annotator.detach([product])
+    product.destroy()
+    # Capture-on-play is a global switch. Leaving it on makes every later app
+    # update inside PPO pay for an RTX frame, which is the difference between a
+    # probe that costs seconds and one that costs the rest of the run.
+    try:
+        rep.orchestrator.set_capture_on_play(False)
+    except Exception as exc:  # pragma: no cover - API drift
+        print(f"[drl-vo-vec] could not stop capture_on_play: {exc!r}", flush=True)
+    return {
+        "path": str(path),
+        "frames": len(best_frames),
+        "fps": fps,
+        "outcome": best_outcome,
+        "camera": camera_path,
+        "resolution": [width, height],
+        "attempts": attempts,
+        "mean_frame_s": round(frame_cost, 3),
+    }
+
+
+def _make_probe(app, env, reference, grid, crowd, args: argparse.Namespace, output: Path, device):
+    """Build the per-iteration hook that scores the policy and records a replay.
+
+    Two recorders exist. With ``--render-camera`` the clip comes out of the room's
+    own camera through RTX, which is what the washroom review needs; without it the
+    episode is redrawn from the state trace, which works on a machine whose
+    ``--enable_cameras`` path blocks at start-up.
+    """
     from pedstrain_simulation.simulation.rl.vec_trainer import evaluate_vec, observations_tensor, termination_flags
 
     every = max(int(args.video_every), 1)
@@ -424,7 +808,20 @@ def _make_probe(env, reference, grid, crowd, args: argparse.Namespace, output: P
                 f"timeout {float(scored['timeout_rate'] or 0.0):.3f}",
                 flush=True,
             )
-        if int(args.video_steps) > 0:
+        if int(args.video_steps) > 0 and args.render_camera:
+            clip = _record_camera_clip(
+                app,
+                env,
+                reference,
+                crowd,
+                policy,
+                args,
+                device,
+                output / "videos" / f"iter_{int(iteration):04d}_overview.mp4",
+            )
+            record["clip"] = clip
+            print(f"[drl-vo-vec] probe it{iteration}: overview clip {clip['outcome']} {clip['frames']} frames", flush=True)
+        elif int(args.video_steps) > 0:
             import numpy as np
             import torch
 
@@ -519,7 +916,8 @@ def _run(app, args: argparse.Namespace, output: Path, report: dict) -> None:
     crowd = stage = None
     if args.pedestrians:
         crowd, stage = _attach_pedestrians(env, args)
-        phase(f"pedestrians ready: {crowd.count} per room, characters {[path.stem for path in stage.characters]}")
+        visuals = "none" if stage is None else [path.stem for path in stage.characters]
+        phase(f"pedestrians ready: {crowd.count} per room from {crowd.trace_path.name}, characters {visuals}")
     env.reset()
     phase("first reset with random start poses")
     # A clone whose room is misplaced drops straight through the floor and then
@@ -557,10 +955,18 @@ def _run(app, args: argparse.Namespace, output: Path, report: dict) -> None:
 
     device = torch.device(args.device)
     if args.mode in ("train", "train-eval"):
-        ppo = PpoConfig(n_steps=args.n_steps, batch_size=args.batch_size, n_epochs=args.epochs, learning_rate=args.lr)
+        ppo = PpoConfig(
+            n_steps=args.n_steps,
+            batch_size=args.batch_size,
+            n_epochs=args.epochs,
+            learning_rate=args.lr,
+            target_kl=args.target_kl,
+            gamma=args.gamma,
+            gae_lambda=args.gae_lambda,
+        )
         phase("starting PPO")
         probe = (
-            _make_probe(env, reference, grid, crowd, args, output, device)
+            _make_probe(app, env, reference, grid, crowd, args, output, device)
             if int(args.video_every) > 0
             else None
         )
@@ -591,6 +997,19 @@ def _run(app, args: argparse.Namespace, output: Path, report: dict) -> None:
         statistics = evaluate_vec(env, policy, episodes=args.episodes, device=device)
         report["evaluation"] = statistics
         phase(f"success rate {statistics['success_rate']}")
+        if args.render_camera and int(args.video_steps) > 0:
+            clip = _record_camera_clip(
+                app,
+                env,
+                reference,
+                crowd,
+                policy,
+                args,
+                device,
+                Path(args.render_video) if args.render_video else output / "videos" / "eval.mp4",
+            )
+            report["clip"] = clip
+            phase(f"clip {clip}")
     report["passed"] = True
     env.close()
 

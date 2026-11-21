@@ -63,6 +63,39 @@ def _sample(poses, coordinates, value):
     return _mix(poses[index], poses[index + 1], fraction)
 
 
+def _basis(up, forward):
+    """Rigid basis whose first two columns are ``up`` and ``forward``."""
+    from pxr import Gf
+
+    up = Gf.Vec3d(*up).GetNormalized()
+    forward = Gf.Vec3d(*forward)
+    forward = (forward - up * Gf.Dot(forward, up)).GetNormalized()
+    side = Gf.Cross(up, forward)
+    return Gf.Matrix4d(
+        up[0], forward[0], side[0], 0.0,
+        up[1], forward[1], side[1], 0.0,
+        up[2], forward[2], side[2], 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    )
+
+
+def _swing(first, second):
+    """Shortest rotation that turns ``first`` onto ``second``."""
+    from pxr import Gf
+
+    a, b = Gf.Vec3d(first).GetNormalized(), Gf.Vec3d(second).GetNormalized()
+    dot = Gf.Dot(a, b)
+    if dot > 1.0 - 1e-9:
+        return Gf.Quatd(1.0)
+    if dot < -1.0 + 1e-9:
+        # Exactly reversed bones have no unique shortest arc; pick any perpendicular.
+        axis = Gf.Cross(a, Gf.Vec3d(1.0, 0.0, 0.0))
+        if axis.GetLength() < 1e-6:
+            axis = Gf.Cross(a, Gf.Vec3d(0.0, 1.0, 0.0))
+        return Gf.Quatd(0.0, axis.GetNormalized())
+    return Gf.Rotation(a, b).GetQuat()
+
+
 class _Motion:
     def __init__(self, path: Path):
         from pxr import Usd, UsdGeom, UsdSkel
@@ -124,10 +157,23 @@ class _Motion:
         _, low, high = min(candidates)
         return tuple(times[low : high + 1]), tuple(value - arc[low] for value in arc[low : high + 1])
 
+    def travel_direction(self):
+        """Direction the walk cycle advances along, in the library's own frame.
+
+        The authored ``controlRig:forwardAxis`` is a retarget convention and does not
+        have to match the clip: this library declares +Z yet walks along -X, so aiming
+        a character with the declared axis makes the crowd stride sideways.
+        """
+        from pxr import Gf
+
+        head = self.walk.GetTranslationsAttr().Get(self.walk_times[0])[0]
+        tail = self.walk.GetTranslationsAttr().Get(self.walk_times[-1])[0]
+        delta = Gf.Vec3d(*[float(tail[axis]) - float(head[axis]) for axis in range(3)])
+        return delta.GetNormalized() if delta.GetLength() > 1e-6 else Gf.Vec3d(0.0, 0.0, 1.0)
+
 
 class _Rig:
     def __init__(self, asset: Path, motion: _Motion):
-        from omni.anim.retarget.core import RetargetController
         from pxr import Gf, Usd, UsdGeom, UsdSkel, UsdUtils
 
         source = Usd.Stage.Open(str(asset))
@@ -159,24 +205,58 @@ class _Rig:
         canonical_forward = (forward[0], -forward[2], forward[1]) if self.up == "Y" else forward
         self.authored_yaw = math.atan2(canonical_forward[1], canonical_forward[0])
         self.cache_id = UsdUtils.StageCache.Get().Insert(self.stage)
-        try:
-            self.controller = RetargetController(
-                str(motion.path), str(motion.skeleton.GetPath()), self.cache_id.ToLongInt(), str(skeleton.GetPath())
+        # Retarget by aiming bones rather than through the SDK: the 110.4
+        # RetargetController aborts on an in-memory target stage, and the two rigs
+        # give their bones different local axes and rolls, so neither an absolute copy
+        # nor a per-joint rotation delta keeps the pose. Each joint instead turns its
+        # own bone onto the direction the matching clip bone points, which leaves the
+        # asset's proportions untouched.
+        self.tags = tags
+        self.motion_tags = motion.tags
+        rest = skeleton.GetPrim().GetAttribute("controlRig:retargetTransforms").Get()
+        if not rest:
+            rest = skeleton.GetRestTransformsAttr().Get()
+        self.rest = rest
+        self.controller = None
+        # The library is Y-up and walks along -X; People assets are Z-up facing -Y.
+        source_up = _axis(str(motion.skeleton.GetPrim().GetAttribute("controlRig:upAxis").Get() or "Y"))
+        self.frame = _basis(source_up, motion.travel_direction()) * _basis(up, forward).GetTranspose()
+        self._frame_quat = self.frame.ExtractRotationQuat()
+        topology = UsdSkel.Topology(self.joints)
+        self._parents = tuple(topology.GetParentIndices())
+        rest_world = tuple(UsdSkel.ConcatJointTransforms(topology, self.rest))
+        self._rest_local = tuple(
+            Gf.Quatd(value.GetReal(), Gf.Vec3d(value.GetImaginary()))
+            for value in UsdSkel.DecomposeTransforms(self.rest)[1]
+        )
+        self._rest_world = tuple(matrix.ExtractRotationQuat() for matrix in rest_world)
+        self._rest_world_pos = tuple(matrix.ExtractTranslation() for matrix in rest_world)
+        self._motion_topology = UsdSkel.Topology(motion.joints)
+        source_index = {}
+        for index, tag in enumerate(self.motion_tags):
+            if tag and tag not in source_index:
+                source_index[tag] = index
+        self._source_index = tuple(source_index.get(tag) if tag else None for tag in self.tags)
+        children = [[] for _ in self.joints]
+        for index, parent in enumerate(self._parents):
+            if parent >= 0:
+                children[parent].append(index)
+        self._aim = tuple(
+            next(
+                ((kid, self._source_index[kid]) for kid in kids if self._source_index[kid] is not None),
+                (None, None),
             )
-            if not self.controller:
-                raise RuntimeError(f"SDK could not initialize independent animation retargeting: {asset}")
-            self.scale = self._leg_length(skeleton, tags, self.units) / self._leg_length(
-                motion.skeleton, motion.tags, motion.units
-            )
-            self.arc = tuple(distance * self.scale for distance in motion.arc)
-            self.walk = tuple(self._retarget(motion.walk, t) for t in motion.walk_times)
-            self.idle = tuple(self._retarget(motion.idle, t) for t in motion.idle_times)
-            self.walk = (*self.walk[:-1], self.walk[0])
-            self.idle = (*self.idle[:-1], self.idle[0])
-            self.idle_times = tuple((t - motion.idle_times[0]) / motion.tcps for t in motion.idle_times)
-        except BaseException:
-            self.close()
-            raise
+            for kids in children
+        )
+        self.scale = self._leg_length(skeleton, tags, self.units) / self._leg_length(
+            motion.skeleton, motion.tags, motion.units
+        )
+        self.arc = tuple(distance * self.scale for distance in motion.arc)
+        self.walk = tuple(self._retarget(motion.walk, t) for t in motion.walk_times)
+        self.idle = tuple(self._retarget(motion.idle, t) for t in motion.idle_times)
+        self.walk = (*self.walk[:-1], self.walk[0])
+        self.idle = (*self.idle[:-1], self.idle[0])
+        self.idle_times = tuple((t - motion.idle_times[0]) / motion.tcps for t in motion.idle_times)
 
     @staticmethod
     def _leg_length(skeleton, tags, units):
@@ -202,22 +282,38 @@ class _Rig:
         return value
 
     def _retarget(self, animation, time):
-        import carb
-        from pxr import Gf
+        """Map one source pose onto the target skeleton by aiming each bone.
 
-        translations = [carb.Float3(*v) for v in animation.GetTranslationsAttr().Get(time)]
-        rotations = [carb.Float4(*q.GetImaginary(), q.GetReal()) for q in animation.GetRotationsAttr().Get(time)]
-        translations[0], rotations[0] = carb.Float3(0.0, 0.0, 0.0), carb.Float4(0.0, 0.0, 0.0, 1.0)
-        values, quaternions = self.controller.retarget(translations, rotations)
-        if len(values) != len(self.joints) or len(quaternions) != len(self.joints):
-            raise RuntimeError("SDK retargeter returned an incomplete target pose.")
-        position = tuple(Gf.Vec3f(*_finite_vector(v, 3, "retarget translation")) for v in values)
-        checked = tuple(_finite_vector(q, 4, "retarget rotation") for q in quaternions)
-        if any(sum(v * v for v in q) < 1e-12 for q in checked):
-            raise RuntimeError("SDK retargeter returned a zero rotation quaternion.")
-        rotation = tuple(Gf.Quatf(q[3], q[0], q[1], q[2]).GetNormalized() for q in checked)
-        # The bridge owns the world root; sampled animation contains only body motion.
-        return (Gf.Vec3f(0.0, 0.0, 0.0), *position[1:]), (Gf.Quatf(1.0), *rotation[1:])
+        Translations keep the target's rest lengths; each joint's rotation comes from
+        turning its bone onto the direction the same bone points in the clip. The root
+        keeps its rest frame, and joints with no matched child keep their rest
+        rotation, because the bridge owns the world pose and leaves must not drift.
+        """
+        from pxr import Gf, UsdSkel
+
+        source_world = UsdSkel.ConcatJointTransforms(self._motion_topology, animation.GetTransforms(time))
+        source_pos = tuple(matrix.ExtractTranslation() for matrix in source_world)
+        translations, rotations, world = [], [], [None] * len(self.joints)
+        for index, matrix in enumerate(self.rest):
+            translations.append(Gf.Vec3f(matrix.ExtractTranslation()))
+            parent = self._parents[index]
+            parent_world = world[parent] if parent >= 0 else None
+            local = self._rest_local[index]
+            wanted = None
+            child, child_source = self._aim[index]
+            source = self._source_index[index]
+            if parent_world is not None and source is not None and child is not None:
+                rest_span = self._rest_world_pos[child] - self._rest_world_pos[index]
+                anim_span = self.frame.TransformDir(source_pos[child_source] - source_pos[source])
+                if rest_span.GetLength() > 1e-6 and anim_span.GetLength() > 1e-6:
+                    wanted = _swing(rest_span, anim_span) * self._rest_world[index]
+                    local = parent_world.GetInverse() * wanted
+            if wanted is None:
+                wanted = parent_world * local if parent_world is not None else self._rest_world[index]
+            local = Gf.Quatd(local.GetNormalized())
+            rotations.append(Gf.Quatf(local.GetReal(), Gf.Vec3f(local.GetImaginary())))
+            world[index] = wanted
+        return tuple(translations), tuple(rotations)
 
     def close(self):
         from pxr import UsdUtils

@@ -22,7 +22,9 @@ block   size            content
 ======  ==============  =======================================================
 
 Normalization follows the ROS 1 source: ``velocity / 2`` for the map,
-``2 * range / 30 - 1`` for the scan and ``2 * (goal + 2) / 4 - 1`` for the goal.
+``2 * range / 8 - 1`` for the scan and ``2 * (goal + 2) / 4 - 1`` for the goal. A
+beam with no return inside range is packed as the 8 m maximum, not as 0 m, so a
+miss stops reading as a wall against the bumper.
 Nothing is clipped, so a pedestrian faster than 2 m/s exceeds the nominal
 ``[-1, 1]`` box exactly as in training.
 
@@ -132,7 +134,7 @@ def drl_vo_observations(
     env: object,
     robot_name: str = "robot",
     robot_radius_m: float = 0.37,
-    scan_scale_m: float = 30.0,
+    scan_scale_m: float = 8.0,
 ) -> torch.Tensor:
     """Return the frozen DRL-VO observation, shape ``[num_envs, 19202]``.
 
@@ -171,7 +173,13 @@ def drl_vo_observations(
     state = observation_state(env)
     stamp = (int(getattr(env, "common_step_counter", 0)), int(env.episode_length_buf[0]))
     if state.stamp != stamp:
-        state.push(scan.detach().to(device=device, dtype=dtype))
+        # A beam with no return inside the sensor range was published as 0 m.
+        # Packed as ``2 * r / scale - 1`` that reads as a wall pressed against
+        # the robot, and ``_compress_scan`` takes the group minimum, so a
+        # single miss pinned a whole nine-beam group at that reading. Misses
+        # now carry the sensor maximum instead, which is what they mean.
+        packed = torch.where(scan > 0.0, scan, torch.full_like(scan, float(scan_scale_m)))
+        state.push(packed.detach().to(device=device, dtype=dtype))
         state.stamp = stamp
 
     goal = provider.local_goal_base_xy.to(dtype=dtype)
@@ -216,10 +224,13 @@ def _pedestrian_velocity_map(
     device: torch.device,
     dtype: torch.dtype,
 ) -> torch.Tensor:
-    """Rasterize robot-frame pedestrian velocities into ``[num_envs, 2, 80, 80]``.
+    """Rasterize the crowd into ``[num_envs, 2, 80, 80]``.
 
-    Cells hold the pedestrian's absolute velocity in the robot frame; a cell
-    written twice keeps the last pedestrian, matching the legacy Python loop.
+    Channel 0 marks every cell holding a pedestrian, channel 1 holds the walker
+    speed. The original carried the velocity vector alone, which reads as an
+    empty room whenever the crowd stands still -- and 46 % of the baked table
+    frames are exactly that. A cell written twice keeps the last pedestrian,
+    matching the legacy Python loop.
     """
     result = torch.zeros((count, 2, PEDESTRIAN_MAP_CELLS, PEDESTRIAN_MAP_CELLS), dtype=dtype, device=device)
     if positions.shape[1] == 0:
@@ -238,8 +249,9 @@ def _pedestrian_velocity_map(
             continue
         flat = (row[index][selected] * PEDESTRIAN_MAP_CELLS + column[index][selected]).reshape(1, -1)
         value = velocities[index][selected].to(dtype=dtype)
-        result[index, 0].view(-1).scatter_(0, flat.reshape(-1), value[:, 0])
-        result[index, 1].view(-1).scatter_(0, flat.reshape(-1), value[:, 1])
+        occupied = torch.ones(value.shape[0], dtype=dtype, device=device)
+        result[index, 0].view(-1).scatter_(0, flat.reshape(-1), occupied)
+        result[index, 1].view(-1).scatter_(0, flat.reshape(-1), value.norm(dim=1))
     return result
 
 
@@ -262,6 +274,11 @@ def _compress_scan(history: torch.Tensor) -> torch.Tensor:
 
 
 def scan_angles(device: torch.device = torch.device("cpu")) -> torch.Tensor:
-    """Return the legacy front beam angles [rad] in the robot frame."""
-    step = math.pi / SCAN_BEAMS
-    return (torch.arange(SCAN_BEAMS, dtype=torch.float32, device=device) * step - math.pi / 2).reshape(1, -1)
+    """Return the omnidirectional beam angles [rad] in the robot frame.
+
+    The sweep covers 360 degrees at ``2*pi/SCAN_BEAMS`` per beam, matching the
+    ray cast the reference publishes as ``env.drl_vo_scan``. A front-only sweep
+    could not explain an episode that ends on omnidirectional clearance.
+    """
+    step = 2.0 * math.pi / SCAN_BEAMS
+    return (torch.arange(SCAN_BEAMS, dtype=torch.float32, device=device) * step - math.pi).reshape(1, -1)
